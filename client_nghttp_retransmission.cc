@@ -2340,6 +2340,7 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
 
     // for next segment
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_new_rate, 0);    // Step 1: set priority
+    //nghttp2_submit_priority(session, NGHTTP2_FLAG_NONE, face_stream_id [5], &dang_pri_spec);
     if (client->add_request(hung_uri+"/change/"+new_rate_string, hung_data_prd, // Step 2: submit request
                                  hung_data_length, hung_pri_spec)) {
             submit_request(client, hung_headers, client->reqvec.back().get());
