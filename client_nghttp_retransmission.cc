@@ -525,8 +525,8 @@ double muy = -1;
 bool                retrans_check = false;
 int                 retrans_rate = 0;
 double              retrans_avgBuffer = 0;
-const int           retrans_avgBuffer_period = 10; // consider the last 20 segments
-const int           retrans_buff_thres = 7000;
+const int           retrans_avgBuffer_period = 20; // consider the last 20 segments
+const int           retrans_buff_thres = 5000;
 int                 retrans_switch_thres = 1;
 std::vector<int>    minh_rate_recorder;
 int                 needed_retrans_seg_id = 0; // count segment id from 1
@@ -2155,7 +2155,7 @@ int hung_compute_max_adapted_rate (double thrp) {
   int rate_candidate = hung_rate_set.at(0); 
   for (auto rate = hung_rate_set.rbegin(); rate != hung_rate_set.rend(); ++rate) {
     //std::cout << std::endl << "[ADAPTATION] Take look " << *rate << " " << thrp << std::endl;
-    if ((*rate) <= thrp) { 
+    if ((*rate) < thrp) { 
       rate_candidate = *rate;
       break; 
     }
@@ -2214,15 +2214,6 @@ int getIndexByRate(int rate){
   }
   return -1;
 }
-/* 191103 Minh [live streaming for retransmission] ADD-S*/
-int minh_getIndexNotLessThanValue(double rate){
-  for (int i = 0; i < hung_rate_set.size(); i++){
-    if (hung_rate_set.at(i) >= rate)
-      return i;
-  }
-  return hung_rate_set.size()-1;
-}
-/* 191103 Minh [live streaming for retransmission] ADD-E*/
 void hung_change_rate(HttpClient *client, int new_rate) {
   if(dang_adapted_rate == new_rate) return;
   else dang_adapted_rate = new_rate;
@@ -2344,7 +2335,7 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
         if(submit)
             submit_request(client, dang_headers, client->reqvec.back().get()); 
     }
-    std::cout << "[SET PRIORITY] NEW bitrate ["<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
+    std::cout << "[CHANGE PRIORITY] NEW bitrate ["<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
                           << std::endl;
 
     // for next segment
@@ -2355,8 +2346,8 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
             submit_request(client, hung_headers, client->reqvec.back().get());
         }
 
-    std::cout << "[CHANGE PRIORITY] NEXT bitrate: " << new_rate_string << " for segment: " << hung_rate_recorder.size() << std::endl;  // Step 3: print info
-                                       
+    std::cout << "\t\tNEXT bitrate: " << new_rate_string << " for segment: " << hung_rate_recorder.size()// Step 3: print info
+            << std::endl << std::endl;                             
    // }
    //  else{
    //      int nghttp2_session_change_stream_priority(nghttp2_session *session, int32_t stream_id, const nghttp2_priority_spec *pri_spec)
@@ -2401,11 +2392,11 @@ void retransmission_aggressive_method(HttpClient *client){
 // retransmisison algorithm -S    
     if (rate_recorder_length >= retrans_avgBuffer_period){
       for (int i = num_buffer_segment - 1; i > 1 ; i--){ // start from (num_buffer_segment - 1) because we don't want to retransmit the oldest segment in buffer which will be played soon
-          int cur_consider_rate = hung_rate_recorder.at(rate_recorder_length - i);
+          int cur_consider_rate = hung_rate_recorder.at(rate_recorder_length- i);
 
           if ( cur_consider_rate < retrans_getAvgBitrate() &&
               getIndexByRate(hung_rate_recorder.at(rate_recorder_length - i - 1)) - getIndexByRate(cur_consider_rate)  > retrans_switch_thres &&
-              (hung_rate_recorder.at(rate_recorder_length - i - 1) == minh_rate_recorder.at(rate_recorder_length - i - 1))){  // this condition is to prevent check the segment already retransmitted
+              (hung_rate_recorder.at(rate_recorder_length - i - 1) == minh_rate_recorder.at(rate_recorder_length - i - 1))){
               retrans_check = true;
               needed_retrans_seg_id = rate_recorder_length - i;
 
@@ -2422,47 +2413,30 @@ void retransmission_aggressive_method(HttpClient *client){
       new_rate = hung_compute_max_adapted_rate ((1-hung_safety_margin)*thrp_est); // for e.x: test
       //
       if (retrans_check == false || new_rate < hung_rate_recorder.at(rate_recorder_length-1)){ // new_rate < old_rate means that ABR must decrease QoE ==> don't care about the past.*** FOR MORE COMPLICATED, consider the QoE of next bitrate and the needed_retrans_seg_id
-        if (new_rate != hung_rate_recorder.at(rate_recorder_length-1)){
           minh_change_rate(client,new_rate);  //continue with current ABR
           return;
-        }
-        else
-          {return;}
       }
       else{   // find new_rate and retrans_rate.
-/* 191103 Minh [live streaming for retransmission] MOD-S*/  
-          int min_next_seg_rate = (hung_rate_recorder.at(rate_recorder_length - 1) < retrans_getAvgBitrate()) ? 
-                                  hung_rate_recorder.at(rate_recorder_length - 1) :
-                                  retrans_getAvgBitrate();
-          double max_next_seg_rate = (new_rate < retrans_getAvgBitrate()) ? retrans_getAvgBitrate() : new_rate;
-          double division_next_seg = ((hung_cur_buff + hung_sd - retrans_buff_thres) != 0) ?
-                                     (hung_cur_buff + hung_sd - retrans_buff_thres) :
-                                     0.01;
-          double division_retrans_seg = ((hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin) != 0) ?
-                                         (hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin) : 
-                                         0.01;    
-#if 0  
           for (int j = getIndexByRate(hung_rate_recorder.at(needed_retrans_seg_id)) + 1;j <= getIndexByRate(hung_rate_recorder.at(needed_retrans_seg_id - 1)); j++){  // consider each r_n' first
-#else
-          for (int j = getIndexByRate(hung_rate_recorder.at(needed_retrans_seg_id - 1)); j > getIndexByRate(hung_rate_recorder.at(needed_retrans_seg_id)); j--){  // consider each r_n' first. r_n is considered from r_(n-1) to > r_n    
-#endif          
-/* 191103 Minh [live streaming for retransmission] MOD-E*/ 
-              //for (int i = minh_getIndexNotLessThanValue(min_next_seg_rate); i < hung_rate_set.size(); i++){ // decrease r_(i+1)  gradually but >= min level
-              for (int i = getIndexByRate(hung_rate_recorder.at(rate_recorder_length-1)); i <= hung_compute_max_adapted_rate(max_next_seg_rate); i++){ // increase from bitrate of segment (i) to max
 
+              int min_next_seg_rate = (hung_rate_recorder.at(rate_recorder_length - 1) < retrans_getAvgBitrate()) ? hung_rate_recorder.at(rate_recorder_length - 1) : retrans_getAvgBitrate();
+              double division_next_seg = ((hung_cur_buff + hung_sd - retrans_buff_thres) != 0) ? (hung_cur_buff + hung_sd - retrans_buff_thres) : 0.01;
+              double division_retrans_seg = ((hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin) != 0) ? (hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin) : 0.01;
+
+              for (int i = hung_rate_set.size() - 1; hung_rate_set.at(i) >= min_next_seg_rate; i--){ // decrease r_(i+1)  gradually but >= min level
                   double condition = thrp_est/hung_sd -
                                      (hung_rate_set.at(i)/division_next_seg + hung_rate_set.at(j)/division_retrans_seg);
                   if (condition >= 0){ // condition (*) in algorith is satisfied
                       new_rate = hung_rate_set.at(i) ;// choose the last j;
                       retrans_rate = hung_rate_set.at(j);
                       found_rates = true;
+                      break; 
                   }
                   else{
-                      found_rates = false;
+                      // do nothing
                   }                
               }
-/* 191103 Minh [live streaming for retransmission] DEL-S*/
-#if 0              
+
               if (found_rates){   // found the first set (r_n, r_(i+1)). Now set priority for each stream
                   allocated_thrp_new = (new_rate*hung_sd)/(hung_cur_buff + hung_sd - retrans_buff_thres);
                   allocated_thrp_retrans = (retrans_rate*hung_sd)/((hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin));
@@ -2480,22 +2454,9 @@ void retransmission_aggressive_method(HttpClient *client){
               else{   
                   // do nothing. CanNOT find an set
               }
-#endif              
-/* 191103 Minh [live streaming for retransmission] DEL-E*/              
           }
 
           if (found_rates){
-              allocated_thrp_new = (new_rate*hung_sd)/(hung_cur_buff + hung_sd - retrans_buff_thres);
-              allocated_thrp_retrans = (retrans_rate*hung_sd)/((hung_cur_buff + needed_retrans_seg_id - rate_recorder_length - 1)*(1 - hung_safety_margin));
-
-              if (allocated_thrp_retrans < allocated_thrp_new){
-                  pri_retrans_rate = 1;
-                  pri_new_rate = (int) allocated_thrp_new/allocated_thrp_retrans;
-              }
-              else {
-                  pri_new_rate = 1;
-                  pri_retrans_rate = (int) allocated_thrp_retrans/allocated_thrp_new;
-              }           
               minh_retrans_segment(client, new_rate, retrans_rate, pri_new_rate, pri_retrans_rate, needed_retrans_seg_id);
               std::cout << "***** Minh_2: RETRANS INFO \n" << new_rate << "\t" << pri_new_rate  << "\n"
                                                            << retrans_rate << "\t" << pri_retrans_rate << "\n"
@@ -2508,8 +2469,8 @@ void retransmission_aggressive_method(HttpClient *client){
       }
     }
     else{ // run current aABR
-      new_rate = hung_compute_max_adapted_rate ((1-hung_safety_margin)*thrp_est); // for e.x: test
-      minh_change_rate(client, new_rate); // no retransmission
+       new_rate = hung_compute_max_adapted_rate ((1-hung_safety_margin)*thrp_est); // for e.x: test
+        minh_change_rate(client, new_rate); // no retransmission
     }
 // retransmisison algorithm -E        
 }

@@ -15,7 +15,7 @@ int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();   //la segment hien co tai server
 auto server_seg = std::make_shared<int>();  //la segment ma server chuan bi push
 auto client_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 61;
+const int MAX_SEGMENTS = 251;
 
 bool on_periodic_mode = true; //true: live streaming
 bool on_pushing_in_periodic_mode = false;
@@ -67,7 +67,7 @@ void push_remaining_files(const response *res,bool retrans_check) {	//Minh: goi 
     print_new_seg(std::stoi(retrans_seg_id),std::stoi(retrans_bitrate), retrans_check);
     boost::system::error_code ec;
 
-    auto push = res->push(ec, "GET", "/RE_seg_"+retrans_seg_id+"_rate_"+retrans_bitrate+"RETRANS"); 
+    auto push = res->push(ec, "GET", "/seg_"+retrans_seg_id+"_rate_"+retrans_bitrate+"RETRANS"); 
 
     push->on_close([res](uint32_t error_code) { // khi push xong segment cho client
       if (!error_code){
