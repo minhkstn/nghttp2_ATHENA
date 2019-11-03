@@ -8,13 +8,14 @@
 #include <unistd.h>
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
+using namespace boost::posix_time;
 
 bool steady_state=false;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();   //la segment hien co tai server
 auto server_seg = std::make_shared<int>();  //la segment ma server chuan bi push
 auto client_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 251;
+const int MAX_SEGMENTS = 61;
 
 bool on_periodic_mode = true; //true: live streaming
 bool on_pushing_in_periodic_mode = false;
@@ -56,7 +57,7 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
   std::cout << " at time: " << get_time() << "ms" << std::endl;
 }
 
-void push_remaining_files(const response *res) {	//Minh: goi ham nay thi moi update STT cua segment
+void push_remaining_files(const response *res,bool retrans_check) {	//Minh: goi ham nay thi moi update STT cua segment
   if (*server_seg + 1 >= MAX_SEGMENTS) {	// Minh: server_seg la segment vua tai xong
     res->write_head(200);
     res->end(file_generator("push.html"));
@@ -66,15 +67,13 @@ void push_remaining_files(const response *res) {	//Minh: goi ham nay thi moi upd
     print_new_seg(std::stoi(retrans_seg_id),std::stoi(retrans_bitrate), retrans_check);
     boost::system::error_code ec;
 
-    auto push = res->push(ec, "GET", "/seg_"+retrans_seg_id+"_rate_"+retrans_bitrate+"RETRANS"); 
+    auto push = res->push(ec, "GET", "/RE_seg_"+retrans_seg_id+"_rate_"+retrans_bitrate+"RETRANS"); 
 
     push->on_close([res](uint32_t error_code) { // khi push xong segment cho client
       if (!error_code){
         std::cout << "RETRANSMITTED seg #" << retrans_seg_id << " bitrate " << retrans_bitrate 
                           << " at time: " << get_time() << "ms" << std::endl << std:: endl; 
-      } 
-      retrans_check = false;
-      push_remaining_files(res);    
+      }  
     });
 
     push->write_head(200);
@@ -101,7 +100,7 @@ void push_remaining_files(const response *res) {	//Minh: goi ham nay thi moi upd
       else { //Neu dang co nhieu segment co san 
         on_periodic_mode = false;
         on_pushing_in_periodic_mode = true;
-        push_remaining_files(res);  // ham truy hoi de push lien tiep nhieu segment ma k can wait()
+        push_remaining_files(res,false);  // ham truy hoi de push lien tiep nhieu segment ma k can wait()
       }     
     });
 
@@ -113,24 +112,29 @@ void push_remaining_files(const response *res) {	//Minh: goi ham nay thi moi upd
 }
 
 void push_file( std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime>> timer, 
-                const response *res, std::shared_ptr<bool> closed, boost::system::error_code &ec) {
+                const response *res, std::shared_ptr<bool> closed, boost::system::error_code &ec, bool retrans_check) {
   if (ec || *closed) {
     return;
   }
 
-  // Hung_comment: Cai nay chi la dia chi thoi nhe!
-  timer->expires_at(timer->expires_at() + boost::posix_time::milliseconds(segment_duration));
-  timer->async_wait(boost::bind(push_file, timer, res, closed, ec));
+  if (retrans_check){
+    push_remaining_files(res, retrans_check);
+  }
+  else{
+    // Hung_comment: Cai nay chi la dia chi thoi nhe!
+    timer->expires_at(timer->expires_at() + boost::posix_time::milliseconds(segment_duration));
+    timer->async_wait(boost::bind(push_file, timer, res, closed, ec, retrans_check));
 
-  *avail_seg = *avail_seg + 1;          // generate a new segment every segment duration
+    *avail_seg = *avail_seg + 1;          // generate a new segment every segment duration
 
-  // if the server are pushing another segment
-  if (on_pushing_in_periodic_mode) { return; }
+    // if the server are pushing another segment
+    if (on_pushing_in_periodic_mode) { return; }
 
-  // push all remaining segments, 
-  // during this duration, on_pushing_in_periodic_mode = true
-  
-  push_remaining_files(res);
+    // push all remaining segments, 
+    // during this duration, on_pushing_in_periodic_mode = true
+    
+    push_remaining_files(res, retrans_check);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -172,7 +176,7 @@ int main(int argc, char *argv[]) {
         *closed = true;
       });
 
-      timer->async_wait(boost::bind(push_file, timer, &res, closed, ec));
+      timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
 
       on_steady_stage = true;
 
@@ -220,6 +224,20 @@ int main(int argc, char *argv[]) {
     std::cout << "[RETRANS] segment #" << retrans_seg_id << " bitrate " << retrans_bitrate << std::endl;
 
     //Goi 1 ham push_file de gui 1 retransmitted segment##########################################################################
+    auto avail_time = milliseconds(*server_seg * segment_duration);
+
+    // compute the wait interval to the next available time instant. It may be negative
+    auto wait_intv = avail_time - avail_time;
+
+    // call the tick function
+    boost::system::error_code ec;
+
+    auto timer = std::make_shared<boost::asio::deadline_timer>(res.io_service(), wait_intv);
+    auto closed = std::make_shared<bool>();
+      
+    push_file(timer,&res,closed,ec, true);
+    res.write_head(200);
+    res.end("Responded by "+retrans_bitrate);
   });
 /* 191030 Minh [live streaming for retransmission] ADD-E*/
 
