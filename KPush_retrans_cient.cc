@@ -555,7 +555,7 @@ double                thrp_est = 0;
 enum Adaptation_method { AP, ATL, KPush };
 Adaptation_method    hung_method = KPush;
 int                  hung_cur_rtt = 50;     // ik1 => 220ms
-int                  hung_K = 1;
+int                  hung_K = 2;
 int num_of_request=1;
 
 // Hung: recorders
@@ -2343,8 +2343,8 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
             submit_request(client, dang_headers, client->reqvec.back().get()); 
         num_of_request++;
     }
-    std::cout << "[RETRANS] NEW bitrate ["<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
-                                          << " with # seg: " << m_retrans_num << std::endl;
+    std::cout << "[RETRANS] seg [" << needed_retrans_seg_id +1 << "] at rate [" << retrans_rate << "]\n\t" << std::endl;//<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
+ 
 
     // for next segment                                        
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_new_rate, 0);    // Step 1: set priority
@@ -2354,7 +2354,7 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
           num_of_request++;
         }
 
-    std::cout << "\t\tNEXT bitrate: " << new_rate_string << " for segment: " << hung_rate_recorder.size()// Step 3: print info
+    std::cout << "\tNEXT seg [" << hung_rate_recorder.size() << "] at rate [" << new_rate_string// Step 3: print info
             << std::endl << std::endl;   
 
    // }
@@ -2394,47 +2394,60 @@ void retransmission_aggressive_method(HttpClient *client){
     double allocated_thrp_retrans = 1;
 
     //std::cout << "***** Minh_1: " << rate_recorder_length << std::endl;
-// retransmisison algorithm -S    
+// retransmisison algorithm -S  
+    bool checked = false;  
     if (rate_recorder_length >= retrans_avgBuffer_period){
-      for (int i = num_buffer_segment - 1; i > 1 ; i--){ // start from (num_buffer_segment - 1) because we don't want to retransmit the oldest segment in buffer which will be played soon
+      for (int i = num_buffer_segment - 1; i > 2 ; i--){ // start from (num_buffer_segment - 1) because we don't want to retransmit the oldest segment in buffer which will be played soon
           int cur_consider_rate = hung_rate_recorder.at(rate_recorder_length- i);
 
-          if ( cur_consider_rate < retrans_getAvgBitrate() &&
-              getIndexByRate(hung_rate_recorder.at(rate_recorder_length - i - 1)) - getIndexByRate(cur_consider_rate)  > retrans_switch_thres){
-              //(hung_rate_recorder.at(rate_recorder_length - i - 1) == minh_rate_recorder.at(rate_recorder_length - i - 1))) { //another way to check
-              bool checked = false;
-
-              if (retrans_retransmitted_seg_recorder.size() > 0){
-                for (int m = 0; m < retrans_retransmitted_seg_recorder.size(); m++){
-                  if (rate_recorder_length - i == retrans_retransmitted_seg_recorder.at(m)) {
-                    checked = true;
-                    std::cout << "***** Minh_1: CHECKED" << std::endl;
-                    break;        // currently
-                  } 
-                }
+          if (retrans_retransmitted_seg_recorder.size() > 0){
+            for (int m = 0; m < retrans_retransmitted_seg_recorder.size(); m++){
+              if (rate_recorder_length - i == retrans_retransmitted_seg_recorder.at(m)) { // if current sement was retransmitted
+                checked = true;
+                std::cout << "***** Minh_1: CHECKED seg " << rate_recorder_length - i + 1 <<  std::endl;  //count form 1
+                break;        // currently
+              } 
+              else{
+                checked = false;  // if check all retransmitted segments and no on matches ==> continue
               }
+            }
+          }
 
-              if (!checked){
-                retrans_check = true;
-                needed_retrans_seg_id = rate_recorder_length - i;
-                retrans_retransmitted_seg_recorder.push_back(needed_retrans_seg_id);
+          // if ( cur_consider_rate < retrans_getAvgBitrate() &&
+          //     getIndexByRate(hung_rate_recorder.at(rate_recorder_length - i - 1)) - getIndexByRate(cur_consider_rate)  > retrans_switch_thres){
+              
+          //     if (retrans_retransmitted_seg_recorder.size() > 0){
+          //       for (int m = 0; m < retrans_retransmitted_seg_recorder.size(); m++){
+          //         if (rate_recorder_length - i == retrans_retransmitted_seg_recorder.at(m)) { // this is another way
+          //           checked = true;
+          //           std::cout << "***** Minh_1: CHECKED" << std::endl;
+          //           break;        // currently
+          //         } 
+          //         else{
+          //           checked = false;
+          //         }
+          //       }
+          //     }
 
-                std::cout << "***** Minh_1: NEED RETRANS \t" << needed_retrans_seg_id +1 << std::endl;
-                std::cout << "***** Minh_1: cur_segment \t" << rate_recorder_length << std::endl;
-                std::cout << "***** Minh_1: consider_rate \t" << cur_consider_rate << std::endl;
-                std::cout << "***** Minh_1: pre_seg_rate \t" << hung_rate_recorder.at(rate_recorder_length - i - 1) << std::endl;
+          if (!checked){
+            if ( cur_consider_rate < retrans_getAvgBitrate() &&
+                 getIndexByRate(hung_rate_recorder.at(rate_recorder_length - i - 1)) - getIndexByRate(cur_consider_rate)  > retrans_switch_thres){  // this seg was checked and the 1st condition is satisfied
+              retrans_check = true;
+              needed_retrans_seg_id = rate_recorder_length - i;
+              retrans_retransmitted_seg_recorder.push_back(needed_retrans_seg_id);
 
-                break; // choose the first segment from the beginning of buffer                
-              }
-              // retrans_check = true;
-              // needed_retrans_seg_id = rate_recorder_length - i;
+              std::cout << "***** Minh_1: NEED RETRANS \t" << needed_retrans_seg_id +1  << "\t from rate " << cur_consider_rate << std::endl;
+              std::cout << "***** Minh_1: cur_segment \t" << rate_recorder_length << std::endl;
 
-              // std::cout << "***** Minh_1: NEED RETRANS \t" << needed_retrans_seg_id +1 << std::endl;
-              // std::cout << "***** Minh_1: cur_segment \t" << rate_recorder_length << std::endl;
-              // std::cout << "***** Minh_1: consider_rate \t" << cur_consider_rate << std::endl;
-              // std::cout << "***** Minh_1: pre_seg_rate \t" << hung_rate_recorder.at(rate_recorder_length - i - 1) << std::endl;
 
-              // break; // choose the first segment from the beginning of buffer
+              break; // choose the first segment from the beginning of buffer                
+            }
+            else{
+              retrans_check = false;
+            }
+          }
+          else {
+
           }
       }
 
@@ -2443,10 +2456,11 @@ void retransmission_aggressive_method(HttpClient *client){
       //
       if (retrans_check == false || new_rate < hung_rate_recorder.at(rate_recorder_length-1)){ // new_rate < old_rate means that ABR must decrease QoE ==> don't care about the past.*** FOR MORE COMPLICATED, consider the QoE of next bitrate and the needed_retrans_seg_id
         retrans_check = false;
+        checked = false;
         hung_req_vod_rate(client, new_rate);  //continue with current ABR
         return;
       }
-      else{   // find new_rate and retrans_rate.
+      else if (!checked){   // find new_rate and retrans_rate.
 
           int min_next_seg_rate = (hung_rate_recorder.at(rate_recorder_length - 1) < retrans_getAvgBitrate()) ? 
                                   hung_rate_recorder.at(rate_recorder_length - 1) :
@@ -2490,8 +2504,8 @@ void retransmission_aggressive_method(HttpClient *client){
                   pri_retrans_rate = (int) allocated_thrp_retrans/allocated_thrp_new;
               }           
 
-              retrans_num = 1;
-              next_num = 1;
+              retrans_num = hung_K;
+              next_num = hung_K;
 
               minh_retrans_segment(client, new_rate, retrans_rate, pri_new_rate, pri_retrans_rate, needed_retrans_seg_id, retrans_num, next_num);
               std::cout << "***** Minh_2: RETRANS INFO \n" << new_rate << "\t" << pri_new_rate  << "\n"
@@ -2502,6 +2516,10 @@ void retransmission_aggressive_method(HttpClient *client){
               hung_req_vod_rate(client, new_rate); // no retransmission
               retrans_check = false; 
           }        
+      }
+      else {  // checked ==> no retransmission
+         hung_req_vod_rate(client, new_rate); // no retransmission
+         retrans_check = false; 
       }
     }
     else{ // run current aABR
@@ -2543,7 +2561,7 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     // std::cout << "* Minh * from server "<< std::endl;
 /* 191103 Minh [Kpush with retransmission] ADD-S*/
     //num_of_request++; //minh
-     std::cout << "* Minh * type_reg\t" << minh_get_type_from_uri_1(req->make_reqpath()) << std::endl;
+    //std::cout << "* Minh * type_reg\t" << minh_get_type_from_uri_1(req->make_reqpath()) << std::endl;
     hung_client_seg = hung_get_seg_from_uri(req->make_reqpath());    
     int rate = hung_get_rate_from_uri(req->make_reqpath());
 
@@ -2556,9 +2574,8 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     //if (found_rates && hung_client_seg < hung_seg_recorder.at(hung_seg_recorder.size()-1)) { // stream nay la stream cho segment retransmitted
     if (minh_get_type_from_uri_1(req->make_reqpath()) == "/RETRANS" ){  // stream nay la stream cho segment retransmitted
       std:: cout << "[RETRANS] received retransmitted seg " << hung_client_seg << " in " << (download_intv_us / 1000) << "ms" << std::endl;
-      std:: cout << "[RETRANS] needed_retrans_seg_id " << needed_retrans_seg_id << std::endl;
 
-      minh_rate_recorder.at(needed_retrans_seg_id) = rate;
+      minh_rate_recorder.at(hung_client_seg-1) = rate;
 
       retrans_check = false; 
       found_rates = false;           
@@ -2764,7 +2781,7 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   // log.close();
   std::cout << "Retransmitted segment list" << std::endl;
   for (auto a = retrans_retransmitted_seg_recorder.rbegin(); a != retrans_retransmitted_seg_recorder.rend(); ++a){
-    std::cout << *a << std::endl;
+    std::cout << *a +1 << std::endl;
   }
   std::cout << "============================= THE END =====================" << std::endl;
 }

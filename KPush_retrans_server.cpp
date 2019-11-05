@@ -73,6 +73,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     } 
 
     int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;
+    std::cout << "[Minh] Prepare to send seg " << pushing_seg << std::endl;
     print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
     retrans_num_decrease--; 
     // std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
@@ -124,10 +125,10 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
       if (next_num == 0) {
         on_pushing_in_periodic_mode = false;
-        if (next_num == 0) {
-          res->write_head(200);
-          res->end();
-        }
+
+        res->write_head(200);
+        res->end();
+        
       } else {
         on_pushing_in_periodic_mode = true;
         push_remaining_files(res, false);
@@ -293,14 +294,14 @@ int main(int argc, char *argv[]) {
 
       if (temp[0] == "bitrate"){
         retrans_bitrate = std::stoi(temp[1]);
-        std::cout << "\tRETRANS RETRANS bitrate = " << retrans_bitrate << std:: endl;
+        //std::cout << "\tRETRANS RETRANS bitrate = " << retrans_bitrate << std:: endl;
       } else if (temp[0] == "num"){
         retrans_num = std::stoi(temp[1]);
         retrans_num_decrease = retrans_num;
-        std::cout << "\tRETRANS RETRANS num = " << retrans_num << std:: endl;
+        //std::cout << "\tRETRANS RETRANS num = " << retrans_num << std:: endl;
       } else{
         retrans_seg_id = std::stoi(temp[1]);
-        std::cout << "\tRETRANS RETRANS seg_id = " << retrans_seg_id << std:: endl;
+        //std::cout << "\tRETRANS RETRANS seg_id = " << retrans_seg_id << std:: endl;
       }
     }
 
