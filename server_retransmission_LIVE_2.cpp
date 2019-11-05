@@ -118,6 +118,7 @@ void push_file( std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_t
   }
 
   if (retrans_check){
+    if (on_pushing_in_periodic_mode) { return; }
     push_remaining_files(res, retrans_check);
   }
   else{
@@ -227,7 +228,7 @@ int main(int argc, char *argv[]) {
     auto avail_time = milliseconds(*server_seg * segment_duration);
 
     // compute the wait interval to the next available time instant. It may be negative
-    auto wait_intv = avail_time - avail_time;
+    auto wait_intv = avail_time - avail_time; // can sua cho nay
 
     // call the tick function
     boost::system::error_code ec;
@@ -236,6 +237,7 @@ int main(int argc, char *argv[]) {
     auto closed = std::make_shared<bool>();
       
     push_file(timer,&res,closed,ec, true);
+    
     res.write_head(200);
     res.end("Responded by "+retrans_bitrate);
   });
