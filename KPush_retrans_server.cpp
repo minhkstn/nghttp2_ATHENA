@@ -15,7 +15,7 @@ int num;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 201;
+const int MAX_SEGMENTS = 601;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -56,6 +56,7 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
 
 void push_remaining_files(const response *res, bool retrans_check) {
   if (*server_seg + 1 >= MAX_SEGMENTS) {
+    std::cout << "********************* DONE ******************" << std::endl;
     res->write_head(200);
     res->end();
     return;
