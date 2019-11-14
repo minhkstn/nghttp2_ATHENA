@@ -29,6 +29,8 @@ int           retrans_num_decrease = 0;
 int           next_bitrate = 0;
 int           next_num = 0;
 int           minh_server_seg = 0; // useless
+
+bool          squad_terminate_check = false;
 /* 191030 Minh [live streaming for retransmission] ADD-E*/
 
 ptime start_time, end_time;
@@ -65,15 +67,22 @@ void push_remaining_files(const response *res, bool retrans_check) {
   // if all required segments were pushed. Note that it must not combined 
   // with the previous instruction
   if (retrans_check){
-    if (retrans_num_decrease == 0) { // retransmitted completely
+    int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;    
+    if (retrans_num_decrease == 0 || squad_terminate_check) { // retransmitted completely
+        
+        if (squad_terminate_check){
+          std::cout << "CANCELLED RETRANSMISISON" << std::endl;
+        }
         retrans_seg_id  = 0;
         retrans_num     = 0;
         retrans_bitrate = 0;
+        squad_terminate_check = false;
 
+        res->write_head(200);
+        res->end();
         return; 
     } 
 
-    int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;
     std::cout << "[Minh] Prepare to send seg " << pushing_seg << std::endl;
     print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
     retrans_num_decrease--; 
@@ -325,6 +334,15 @@ int main(int argc, char *argv[]) {
     
    // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, true));
     push_file(timer,&res,closed,ec, true);
+  });
+
+  server.handle("/terminate_segment/", [](const request &request, const response &res) {
+    std::cout << "[RECEIVED TERMINATION]" << std::endl;
+
+    squad_terminate_check = true;
+
+    res.write_head(200);
+    res.end();
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
   std::string port="3002";
