@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
   server.handle("/req_vod/", [](const request &req, const response &res) {
     // get url, e.g. http://127.0.0.1:3002/req_vod/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
-    std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
+    // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
     if (strs.size() != 4) {
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
       timer->cancel();
       *closed = true;
     });
-    std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
+    // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
     //timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
     push_file(timer,&res,closed,ec, false);
   });
