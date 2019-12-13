@@ -15,7 +15,7 @@ int num;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 601;
+const int MAX_SEGMENTS = 596000/segment_duration + 1;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -60,9 +60,13 @@ void push_remaining_files(const response *res, bool retrans_check) {
   if (*server_seg + 1 >= MAX_SEGMENTS) {
     std::cout << "********************* DONE ******************" << std::endl;
     res->write_head(200);
-    res->end();
+    res->end();          
     return;
   } 
+
+  if (*server_seg > MAX_SEGMENTS - 10){
+    std::cout << '\a' << std::endl;
+  }
 
   // if all required segments were pushed. Note that it must not combined 
   // with the previous instruction
@@ -83,20 +87,38 @@ void push_remaining_files(const response *res, bool retrans_check) {
         return; 
     } 
 
-    std::cout << "[Minh] Prepare to send seg " << pushing_seg << std::endl;
+    std::cout << "[Minh] Prepare to REsend seg " << pushing_seg << std::endl;
     print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
     retrans_num_decrease--; 
     // std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
     boost::system::error_code ec;
-
+    // std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~boost::system::error_code: " << ec << std::endl;
     auto push = res->push(ec, "GET", "/RETRANS_"+std::to_string(pushing_seg)+"_rate_"+std::to_string(retrans_bitrate)); 
 
     push->on_close([res](uint32_t error_code) { // khi push xong segment cho client
       if (!error_code){
-
         std::cout << "RETRANSMITTED seg #" << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << " bitrate " << retrans_bitrate 
                           << " at time: " << get_time() << "ms" << std::endl << std:: endl; 
       } 
+      else if (error_code == NGHTTP2_CANCEL){ // received the RST_STREAM from the client
+        std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINATED seg # " << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << std::endl;
+/*Minh Terminate only ONE retransmitted segment MOD-S*/
+#if 0        
+/*Minh Terminate all next retransmitted segment ADD-S*/
+        retrans_seg_id  = 0;
+        retrans_num     = 0;
+        retrans_bitrate = 0;
+        squad_terminate_check = false;
+        error_code = 0;
+        res->write_head(200);
+        res->end();    
+        return; 
+/*Minh Terminate all next retransmitted segment ADD-E*/
+#else
+       push_remaining_files(res, true); 
+#endif
+/*Minh Terminate only ONE retransmitted segment MOD-E*/        
+      }
 
       if (retrans_num_decrease == 0){  // check xem day co phai segmet cuoi cung k, 
         retrans_seg_id  = 0;
@@ -113,7 +135,10 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });
 
     push->write_head(200);
-    push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
+    // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
+    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+                              +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
+                             "s"+std::to_string(pushing_seg)+".m4s"));    
 
   }
   else{
@@ -127,11 +152,15 @@ void push_remaining_files(const response *res, bool retrans_check) {
     auto push = res->push(ec, "GET", "/seg_"+std::to_string(*server_seg+1)+"_rate_"+std::to_string(next_bitrate));
 
     push->on_close([res](uint32_t error_code) {
-      if (!error_code) {                    // if CANCEL is not sent
-        *server_seg = *server_seg + 1;
-        std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
-                          << " at time: " << get_time() << "ms" << std::endl;
-      }
+      // std::cout << "======================== pushing next segment. error_code: " << error_code << std::endl;
+      // if (!error_code) {                    // if CANCEL is not sent
+      //   *server_seg = *server_seg + 1;
+      //   std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
+      //                     << " at time: " << get_time() << "ms" << std::endl;
+      // }
+      *server_seg = *server_seg + 1;
+      std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
+                        << " at time: " << get_time() << "ms" << std::endl;
 
       if (next_num == 0) {
         on_pushing_in_periodic_mode = false;
@@ -147,7 +176,10 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });    
 
     push->write_head(200);
-    push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(next_bitrate)));
+    // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(next_bitrate)));
+    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+                              +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
+                             "s"+std::to_string(*server_seg+1)+".m4s"));    
   }
 
 
@@ -346,8 +378,8 @@ int main(int argc, char *argv[]) {
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
   std::string port="3002";
-  std::cout << "Listening at the address: " << "192.168.168.1 at port "<<port << std::endl;
-  if (server.listen_and_serve(ec, "192.168.168.1", port)) {
+  std::cout << "Listening at the address: " << "172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  if (server.listen_and_serve(ec, "172.16.23.1", port)) {
     std::cerr << "error: " << ec.message() << std::endl;
   }
 
