@@ -15,7 +15,7 @@ int num;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 596000/segment_duration + 1;
+const int MAX_SEGMENTS = 596000/segment_duration + 20;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -64,7 +64,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     return;
   } 
 
-  if (*server_seg > MAX_SEGMENTS - 10){
+  if (*server_seg > MAX_SEGMENTS - 30){
     std::cout << '\a' << std::endl;
   }
 
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
       on_steady_stage = true;
     }
 
-    *server_seg = get_time() / segment_duration;
+    // *server_seg = get_time() / segment_duration;
 
     // get url, e.g. http://127.0.0.1:3002/rebuff/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
 
     // compute the wait interval to the next available time instant. It may be negative
-    auto wait_intv = avail_time - microsec_clock::local_time();
+    auto wait_intv = avail_time - avail_time; //microsec_clock::local_time();
 
     // call the tick function
     boost::system::error_code ec;
