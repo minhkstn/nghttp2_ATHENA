@@ -16,7 +16,7 @@ int num;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 50;
+const int MAX_SEGMENTS = 5000;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
