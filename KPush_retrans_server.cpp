@@ -12,7 +12,7 @@ using namespace boost::posix_time;
 
 int num;
 
-int segment_duration = 1000; // 1000ms
+int segment_duration = 2000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
 const int MAX_SEGMENTS = 596000/segment_duration + 20;

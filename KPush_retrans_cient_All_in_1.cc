@@ -3140,7 +3140,6 @@ void retransmission_method(HttpClient *client){
           int first_seg_idx = rate_recorder_length - num_buffer_segment + num_buff_seg_before_curr;
           int last_seg_idx = first_seg_idx + buff_level_array[*a][1] - 1;
 
-          // std::cout << "*a "<< *a << "\tnum_buff_seg_before_curr: " << num_buff_seg_before_curr << "\tfirst_seg_idx: " << first_seg_idx << "\tlast_seg_idx " << last_seg_idx << std::endl;
 //determine what is the retrans_rate and the number of retransmitted segment
           for (int j = first_seg_idx; j <= last_seg_idx; j++){
             if (hung_cur_buff + (j+1)*1000 - rate_recorder_length*1000 < 2000 || //avoid retransmitting a segment that is played soon
