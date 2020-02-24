@@ -504,8 +504,8 @@ int       hung_sd = 1000; //ms
 int       hung_MAX_SEGMENTS = 596000/hung_sd + 1;
 
 const RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
-const ABR                     minh_ABR = AGGRESSIVE;
-const bool                    minh_retrans_extention = true;
+const ABR                     minh_ABR = SARA;
+const bool                    minh_retrans_extention = false;
 // SARA ABR -S
   const int I = 2*hung_sd; // act as the buffer enough to start playing
   const int B_a = 10*hung_sd;
@@ -559,7 +559,7 @@ bool             hung_on_buffering = true;
 
 
 // BBB video, SD = 1s
-std::vector<int> hung_rate_set_1s = {47, 92, 135, 182, 226, 270, 353, 425, 538, 621, 808, 1100, 1300, 1700, 2200, 2600, 3300, 3800, 4200, 4700}; 
+std::vector<int> hung_rate_set_1s = {47, 92, 135, 182, 226, 270, 353, 425, 538, 621, 808, 1100, 1300, 1700, 2200, 2600, 3300, 3800, 4200, 4700}; // BBB video, SD = 1s
 
 // BBB video, SD = 2s
 std::vector<int> hung_rate_set_2s = {46, 89, 131, 178, 222, 263, 334, 396, 522, 595, 791, 1000, 1200, 1500, 2100, 2500, 3100, 3500, 3800, 4200}; // BBB video, SD = 2s
@@ -2800,6 +2800,10 @@ int SARA_adaptation_method(){
   int m_cur_rate = hung_rate_recorder.at(hung_rate_recorder.size()-1);
   int m_cur_quality = getIndexByRate(m_cur_rate);
   
+  std::cout << "[PRINT VALUE] SARA - (m_cur_rate*hung_sd)/(m_H_n): " << (m_cur_rate*hung_sd)/(m_H_n)
+            << "\t\t hung_cur_buff - I: " << hung_cur_buff - I
+            << std::endl;
+
   if (hung_cur_buff <= I){
     m_next_rate = hung_rate_set.at(0);
 
@@ -2947,6 +2951,42 @@ int BBA_adaptation_method(){
   }
 
   return m_next_rate;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+double get_harmonic_thrp_FESTIVE_ABR(){
+  double m_harmonic_thrp = 0;
+  double m_sum_thrp = 0;
+  int    m_harmonic_length = 20;
+  int    m_thrp_length = hung_thrp_recorder.size();
+  if (m_thrp_length < 1){
+    m_harmonic_thrp = 2000;
+  }
+  else {
+    if (m_thrp_length < 20)
+      m_harmonic_length = m_thrp_length;
+
+    for (int a = 1; a <= m_harmonic_length; ++a){
+      m_sum_thrp += 1.0/hung_thrp_recorder.at(m_thrp_length-a);
+    }
+    m_harmonic_thrp = m_harmonic_length*1./m_sum_thrp;
+  }
+  std::cout << "[PRINT VALUE] m_harmonic_thrp: " << m_harmonic_thrp << std::endl;
+
+  return m_harmonic_thrp;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+void FESTIVE_adaptation_method(){
+  // 1. estimate throughput: harmonic throughput
+  double m_thrp_est = get_harmonic_thrp_FESTIVE_ABR();
+
+  // 2. compute reference rate, increase/decrease rate as a function of bitrate ????
+
+  // 3. cost tradeoff between current and ref. rate
+
+  // 4. choose randomized target buffer size to determine when sending request
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
