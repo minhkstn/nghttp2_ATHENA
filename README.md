@@ -3,12 +3,16 @@ This project is used in ATHENA lab
 
 
 1) Cai thu vien
-	sudo apt-get install make binutils autoconf automake autotools-dev libtool pkg-config zlib1g-dev libcunit1-dev libssl-dev libxml2-dev libev-dev libevent-dev libjansson-dev libc-ares-dev libjemalloc-dev  python-setuptools g++ g++-mingw-w64-i686 git python3-setuptools
+```
+sudo apt-get install make binutils autoconf automake autotools-dev libtool pkg-config zlib1g-dev libcunit1-dev libssl-dev libxml2-dev libev-dev libevent-dev libjansson-dev libc-ares-dev libjemalloc-dev  python-setuptools g++ g++-mingw-w64-i686 git python3-setuptools
+```
 
-* install python3.7-dev -S
-	sudo apt-get install build-essential checkinstall
-	sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
-* install python3.7-dev -E	
+* Install python3.7-dev*
+```
+sudo apt-get install build-essential checkinstall
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
+```
+
 	cd /usr/src
 	sudo wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
 	sudo tar xzf Python-3.7.4.tgz
@@ -16,10 +20,9 @@ This project is used in ATHENA lab
 	sudo ./configure --enable-optimizations
 	sudo make altinstall
 	
-* libsystemd-dev -S
+* libsystemd-dev*
 	sudo apt-get install libsystemd-daemon-dev (for ubuntu 14)
 	sudo apt-get install libsystemd-dev (ubuntu 18)
-* libsystemd-dev -E
 
 	sudo apt-get install libboost-all-dev libboost-dev
 	sudo apt-get update && sudo apt-get install python3-pip
@@ -27,6 +30,7 @@ This project is used in ATHENA lab
 
 
 2) Cai spdy
+```
 	mkdir ~/HTTP2_src
 	git clone https://github.com/tatsuhiro-t/spdylay.git ~/HTTP2_src/spdylay
 	cd ~/HTTP2_src/spdylay
@@ -36,11 +40,13 @@ This project is used in ATHENA lab
 	./configure
 	sudo make
 	sudo make install
+```	
 
 Tim dia chi spdy
+```
 	sudo updatedb
 	locate libspdylay.so.7
-
+```
 Voi i386:
 	sudo ln -s /usr/local/lib/libspdylay.so.7 /lib/i386-linux-gnu/libspdylay.so.7
 	sudo ln -s /usr/local/lib/libspdylay.so.7.2.0 /lib/i386-linux-gnu/libspdylay.so.7.2.0
