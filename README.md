@@ -110,9 +110,9 @@ Voi x86_64
 	}
 	/********************************************************/
 5) Build server 
-	g++ -o server_push server_push.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+	g++ -o KPush_retrans_server KPush_retrans_server.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
 
-g++ -o server server.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+	g++ -o Server_KPush_VOD_retrans Server_KPush_VOD_retrans.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
 	
 6) Run server
 	LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./server_push
@@ -126,6 +126,8 @@ g++ -o server server.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto
 	$ ./nghttp -snv -p6 http://172.16.165.130:3002/req_vod/bitrate=6000/num=1 -p1 http://172.16.165.130:3002/rebuff/bitrate=900/num=1 > log12/log6_1.txt
 
 	$ ./nghttp -nsv -w10 --har=minh_p14_w10_rate1500_num1_rate900_num_2.txt -p1 http://172.16.197.1:3002/req_vod/bitrate=1500/num=1 -p4 http://172.16.197.1:3002/req_vod/bitrate=900/num=1
+
+	$ ./nghttp -ns --ABR=AGG --segment-duration=4000 --RTT=50 http://172.16.23.1:3002/rebuff/segment_duration=1000/bitrate=1300/num=1/start_seg=1
 
 
 8) Install dummynet at the client

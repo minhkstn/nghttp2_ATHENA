@@ -12,10 +12,10 @@ using namespace boost::posix_time;
 
 int num;
 
-int segment_duration = 1000; // 1000ms
+int segment_duration = 2000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 596000/segment_duration + 20;
+int MAX_SEGMENTS = 30;//596000/segment_duration + 1;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -51,7 +51,7 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
     std::cout << std::endl << "RETRANS seg #" << seg_id << " bitrate " << bitrate;
     std::cout << " at time: " << get_time() << "ms" << std::endl;    
   } else{
-     std::cout << std::endl << "Respond seg #" << seg_id << " bitrate " << bitrate;
+    std::cout << std::endl << "Respond seg #" << seg_id << " bitrate " << bitrate << " SD " << segment_duration;
     std::cout << " at time: " << get_time() << "ms" << std::endl;   
   }
 }
@@ -64,7 +64,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     return;
   } 
 
-  if (*server_seg > MAX_SEGMENTS - 30){
+  if (*server_seg > MAX_SEGMENTS - 10){
     std::cout << '\a' << std::endl;
   }
 
@@ -136,7 +136,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
     push->write_head(200);
     // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
-    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+    push->end(file_generator("/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
                               +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
                              "s"+std::to_string(pushing_seg)+".m4s"));    
 
@@ -177,7 +177,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
     push->write_head(200);
     // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(next_bitrate)));
-    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+    push->end(file_generator("/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
                               +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
                              "s"+std::to_string(*server_seg+1)+".m4s"));    
   }
@@ -210,6 +210,7 @@ void push_file(                                 ////////////////////////////////
 
   // push all remaining segments, 
   // during this duration, on_pushing_in_periodic_mode = true
+  std::cout << "\n\t[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
   push_remaining_files(res, retrans_check);
 }
 
@@ -238,23 +239,27 @@ int main(int argc, char *argv[]) {
 
     // *server_seg = get_time() / segment_duration;
 
-    // get url, e.g. http://127.0.0.1:3002/rebuff/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
+    // get url, e.g. http://127.0.0.1:3002/rebuff/segment_duration=1000/bitrate=2000/num=4 -> segment duration = 1000ms, bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 4) {
+    if (strs.size() != 5) {
       std::cout << "[ERROR] : url is incorrect" << std::endl;
+      std::cout << "[ERROR] : url: " << req.uri().path << std::endl;
       return;
     }
 
     std::vector<std::string> temp;
     for (int i = 2; i < strs.size(); i++) {
-      boost::split(temp, strs[i], boost::is_any_of("="));      
-      if (temp[0] == "bitrate")
-        next_bitrate = std::stoi(temp[1]);
+      boost::split(temp, strs[i], boost::is_any_of("="));    
+      if (temp[0] == "segment_duration")
+          segment_duration = std::stoi(temp[1]);
+      else if (temp[0] == "bitrate")
+          next_bitrate = std::stoi(temp[1]);
       else
-        next_num = std::stoi(temp[1]);
+          next_num = std::stoi(temp[1]); 
     }
+    MAX_SEGMENTS = 596000/segment_duration + 1;
     // compute the available time instant of the next segment
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
 
@@ -272,28 +277,30 @@ int main(int argc, char *argv[]) {
       timer->cancel();
       *closed = true;
     });
-
     timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
+    // push_file(timer,&res,closed,ec, true);
   });
 
   server.handle("/req_vod/", [](const request &req, const response &res) {
-    // get url, e.g. http://127.0.0.1:3002/req_vod/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
+    // get url, e.g. http://127.0.0.1:3002/req_vod/segment_duration=1000/bitrate=2000/num=4 -> segment duration = 1000ms, bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
     // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 4) {
+    if (strs.size() != 5) {
       std::cout << "[ERROR] : url is incorrect req_vod " << strs.size() <<  std::endl;
       return;
     }
 
     std::vector<std::string> temp;
     for (int i = 2; i < strs.size(); i++) {
-      boost::split(temp, strs[i], boost::is_any_of("="));      
-      if (temp[0] == "bitrate")
-        next_bitrate = std::stoi(temp[1]);
+      boost::split(temp, strs[i], boost::is_any_of("="));    
+      if (temp[0] == "segment_duration")
+          segment_duration = std::stoi(temp[1]);
+      else if (temp[0] == "bitrate")
+          next_bitrate = std::stoi(temp[1]);
       else
-        next_num = std::stoi(temp[1]);
+          next_num = std::stoi(temp[1]); 
     }
 
     // compute the available time instant of the next segment
@@ -312,9 +319,9 @@ int main(int argc, char *argv[]) {
       timer->cancel();
       *closed = true;
     });
-    // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
-    //timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
-    push_file(timer,&res,closed,ec, false);
+    std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
+    timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
+    // push_file(timer,&res,closed,ec, false);
   });
 
 /* 191103 Minh [Kpush with retransmission] ADD-S*/
@@ -364,8 +371,8 @@ int main(int argc, char *argv[]) {
       *closed = true;
     });
     
-   // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, true));
-    push_file(timer,&res,closed,ec, true);
+   timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, true));
+    // push_file(timer,&res,closed,ec, true);
   });
 
   server.handle("/terminate_segment/", [](const request &request, const response &res) {
@@ -378,7 +385,7 @@ int main(int argc, char *argv[]) {
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
   std::string port="3002";
-  std::cout << "Listening at the address: " << "172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  std::cout << "Listening at the address: " << "172.16.23.1 at port "<< port << std::endl;
   if (server.listen_and_serve(ec, "172.16.23.1", port)) {
     std::cerr << "error: " << ec.message() << std::endl;
   }
