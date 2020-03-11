@@ -1,0 +1,827 @@
+
+[PUSH] in stream 2
+[  1.003]********************* We start playing *********************
+[URI] 					http://192.168.9.76:3002/seg_1_rate_900
+[RECV] receive stream 2 Buff: 5000
+[  1.013]
+[PUSH] in stream 4
+[  2.002][URI] 					http://192.168.9.76:3002/seg_2_rate_900
+[INFO] Thrp: 100000	Buff: 5000
+
+[ADAPTATION] Invoke at time 1000ms 	 Thrp: 100000kbps 	 Buff: 5000ms
+[ADAPTATION] Change rate 3000
+
+[RECV] receive stream 15 Buff: 5000
+[  2.007][RECV] receive stream 4 Buff: 5000
+[  2.012]
+[PUSH] in stream 6
+[  3.002][URI] 					http://192.168.9.76:3002/seg_3_rate_3000
+[INFO] Thrp: 100000	Buff: 5000
+[RECV] receive stream 6 Buff: 5000
+[  3.035]
+[ADAPTATION] Invoke at time 2050ms 	 Thrp: 100000kbps 	 Buff: 5950ms
+
+[PUSH] in stream 8
+[  4.002][URI] 					http://192.168.9.76:3002/seg_4_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 3000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 8 Buff: 5000
+[  4.035]
+[PUSH] in stream 10
+[  5.002][URI] 					http://192.168.9.76:3002/seg_5_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 4000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 10 Buff: 5000
+[  5.035]
+[PUSH] in stream 12
+[  6.002][URI] 					http://192.168.9.76:3002/seg_6_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 5000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 12 Buff: 5000
+[  6.035]
+[PUSH] in stream 14
+[  7.002][URI] 					http://192.168.9.76:3002/seg_7_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 6000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 14 Buff: 5000
+[  7.035]
+[PUSH] in stream 16
+[  8.002][URI] 					http://192.168.9.76:3002/seg_8_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 7000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 16 Buff: 5000
+[  8.035]
+[PUSH] in stream 18
+[  9.002][URI] 					http://192.168.9.76:3002/seg_9_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 8000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 18 Buff: 5000
+[  9.035]
+[PUSH] in stream 20
+[ 10.003][URI] 					http://192.168.9.76:3002/seg_10_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 9000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 20 Buff: 5000
+[ 10.035]
+[PUSH] in stream 22
+[ 11.002][URI] 					http://192.168.9.76:3002/seg_11_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 10000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 22 Buff: 5000
+[ 11.035]
+[PUSH] in stream 24
+[ 12.002][URI] 					http://192.168.9.76:3002/seg_12_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 11000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 24 Buff: 5000
+[ 12.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 12000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 26
+[ 13.003][URI] 					http://192.168.9.76:3002/seg_13_rate_3000
+[RECV] receive stream 26 Buff: 5000
+[ 13.035]
+[PUSH] in stream 28
+[ 14.002][URI] 					http://192.168.9.76:3002/seg_14_rate_3000
+[INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 13000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+[RECV] receive stream 28 Buff: 5000
+[ 14.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 14000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 30
+[ 15.003][URI] 					http://192.168.9.76:3002/seg_15_rate_3000
+[RECV] receive stream 30 Buff: 5000
+[ 15.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 15000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 32
+[ 16.003][URI] 					http://192.168.9.76:3002/seg_16_rate_3000
+[RECV] receive stream 32 Buff: 5000
+[ 16.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 16000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 34
+[ 17.002][URI] 					http://192.168.9.76:3002/seg_17_rate_3000
+[RECV] receive stream 34 Buff: 5000
+[ 17.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 17000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 36
+[ 18.003][URI] 					http://192.168.9.76:3002/seg_18_rate_3000
+[RECV] receive stream 36 Buff: 5000
+[ 18.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 18000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 38
+[ 19.003][URI] 					http://192.168.9.76:3002/seg_19_rate_3000
+[RECV] receive stream 38 Buff: 5000
+[ 19.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 19000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 40
+[ 20.003][URI] 					http://192.168.9.76:3002/seg_20_rate_3000
+[RECV] receive stream 40 Buff: 5000
+[ 20.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 20000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 42
+[ 21.003][URI] 					http://192.168.9.76:3002/seg_21_rate_3000
+[RECV] receive stream 42 Buff: 5000
+[ 21.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 21000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 44
+[ 22.003][URI] 					http://192.168.9.76:3002/seg_22_rate_3000
+[RECV] receive stream 44 Buff: 5000
+[ 22.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 22000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 46
+[ 23.003][URI] 					http://192.168.9.76:3002/seg_23_rate_3000
+[RECV] receive stream 46 Buff: 5000
+[ 23.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 23000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 48
+[ 24.003][URI] 					http://192.168.9.76:3002/seg_24_rate_3000
+[RECV] receive stream 48 Buff: 5000
+[ 24.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 24000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 50
+[ 25.003][URI] 					http://192.168.9.76:3002/seg_25_rate_3000
+[RECV] receive stream 50 Buff: 5000
+[ 25.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 25000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 52
+[ 26.003][URI] 					http://192.168.9.76:3002/seg_26_rate_3000
+[RECV] receive stream 52 Buff: 5000
+[ 26.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 26000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 54
+[ 27.003][URI] 					http://192.168.9.76:3002/seg_27_rate_3000
+[RECV] receive stream 54 Buff: 5000
+[ 27.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 27000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 56
+[ 28.003][URI] 					http://192.168.9.76:3002/seg_28_rate_3000
+[RECV] receive stream 56 Buff: 5000
+[ 28.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 28000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 58
+[ 29.003][URI] 					http://192.168.9.76:3002/seg_29_rate_3000
+[RECV] receive stream 58 Buff: 5000
+[ 29.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 29000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 60
+[ 30.003][URI] 					http://192.168.9.76:3002/seg_30_rate_3000
+[RECV] receive stream 60 Buff: 5000
+[ 30.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 30000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 62
+[ 31.003][URI] 					http://192.168.9.76:3002/seg_31_rate_3000
+[RECV] receive stream 62 Buff: 5000
+[ 31.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 31000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 64
+[ 32.003][URI] 					http://192.168.9.76:3002/seg_32_rate_3000
+[RECV] receive stream 64 Buff: 5000
+[ 32.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 32000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 66
+[ 33.003][URI] 					http://192.168.9.76:3002/seg_33_rate_3000
+[RECV] receive stream 66 Buff: 5000
+[ 33.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 33000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 68
+[ 34.003][URI] 					http://192.168.9.76:3002/seg_34_rate_3000
+[RECV] receive stream 68 Buff: 5000
+[ 34.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 34000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 70
+[ 35.003][URI] 					http://192.168.9.76:3002/seg_35_rate_3000
+[RECV] receive stream 70 Buff: 5000
+[ 35.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 35000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 72
+[ 36.003][URI] 					http://192.168.9.76:3002/seg_36_rate_3000
+[RECV] receive stream 72 Buff: 5000
+[ 36.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 36000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 74
+[ 37.003][URI] 					http://192.168.9.76:3002/seg_37_rate_3000
+[RECV] receive stream 74 Buff: 5000
+[ 37.036][INFO] Thrp: 93750	Buff: 5000
+
+[ADAPTATION] Invoke at time 37000ms 	 Thrp: 93750kbps 	 Buff: 5000ms
+
+[PUSH] in stream 76
+[ 38.003][URI] 					http://192.168.9.76:3002/seg_38_rate_3000
+[RECV] receive stream 76 Buff: 5000
+[ 38.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 38000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 78
+[ 39.003][URI] 					http://192.168.9.76:3002/seg_39_rate_3000
+[RECV] receive stream 78 Buff: 5000
+[ 39.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 39000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 80
+[ 40.003][URI] 					http://192.168.9.76:3002/seg_40_rate_3000
+[RECV] receive stream 80 Buff: 5000
+[ 40.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 40000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 82
+[ 41.003][URI] 					http://192.168.9.76:3002/seg_41_rate_3000
+[RECV] receive stream 82 Buff: 5000
+[ 41.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 41000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 84
+[ 42.003][URI] 					http://192.168.9.76:3002/seg_42_rate_3000
+[RECV] receive stream 84 Buff: 5000
+[ 42.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 42000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 86
+[ 43.003][URI] 					http://192.168.9.76:3002/seg_43_rate_3000
+[RECV] receive stream 86 Buff: 5000
+[ 43.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 43000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 88
+[ 44.003][URI] 					http://192.168.9.76:3002/seg_44_rate_3000
+[RECV] receive stream 88 Buff: 5000
+[ 44.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 44000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 90
+[ 45.004][URI] 					http://192.168.9.76:3002/seg_45_rate_3000
+[RECV] receive stream 90 Buff: 5000
+[ 45.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 45000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 92
+[ 46.003][URI] 					http://192.168.9.76:3002/seg_46_rate_3000
+[RECV] receive stream 92 Buff: 5000
+[ 46.037][INFO] Thrp: 90909.1	Buff: 5000
+
+[ADAPTATION] Invoke at time 46000ms 	 Thrp: 90909kbps 	 Buff: 5000ms
+
+[PUSH] in stream 94
+[ 47.003][URI] 					http://192.168.9.76:3002/seg_47_rate_3000
+[RECV] receive stream 94 Buff: 5000
+[ 47.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 47000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 96
+[ 48.003][URI] 					http://192.168.9.76:3002/seg_48_rate_3000
+[RECV] receive stream 96 Buff: 5000
+[ 48.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 48000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 98
+[ 49.003][URI] 					http://192.168.9.76:3002/seg_49_rate_3000
+[RECV] receive stream 98 Buff: 5000
+[ 49.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 49000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 100
+[ 50.003][URI] 					http://192.168.9.76:3002/seg_50_rate_3000
+[RECV] receive stream 100 Buff: 5000
+[ 50.036][INFO] Thrp: 93750	Buff: 5000
+
+[ADAPTATION] Invoke at time 50000ms 	 Thrp: 93750kbps 	 Buff: 5000ms
+
+[PUSH] in stream 102
+[ 51.003][URI] 					http://192.168.9.76:3002/seg_51_rate_3000
+[RECV] receive stream 102 Buff: 5000
+[ 51.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 51000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 104
+[ 52.003][URI] 					http://192.168.9.76:3002/seg_52_rate_3000
+[RECV] receive stream 104 Buff: 5000
+[ 52.038][INFO] Thrp: 88235.3	Buff: 5000
+
+[ADAPTATION] Invoke at time 52000ms 	 Thrp: 88235kbps 	 Buff: 5000ms
+
+[PUSH] in stream 106
+[ 53.003][URI] 					http://192.168.9.76:3002/seg_53_rate_3000
+[RECV] receive stream 106 Buff: 5000
+[ 53.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 53000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 108
+[ 54.003][URI] 					http://192.168.9.76:3002/seg_54_rate_3000
+[RECV] receive stream 108 Buff: 5000
+[ 54.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 54000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 110
+[ 55.003][URI] 					http://192.168.9.76:3002/seg_55_rate_3000
+[RECV] receive stream 110 Buff: 5000
+[ 55.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 55000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 112
+[ 56.003][URI] 					http://192.168.9.76:3002/seg_56_rate_3000
+[RECV] receive stream 112 Buff: 5000
+[ 56.035][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 56000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 114
+[ 57.003][URI] 					http://192.168.9.76:3002/seg_57_rate_3000
+[RECV] receive stream 114 Buff: 5000
+[ 57.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 57000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 116
+[ 58.003][URI] 					http://192.168.9.76:3002/seg_58_rate_3000
+[RECV] receive stream 116 Buff: 5000
+[ 58.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 58000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 118
+[ 59.003][URI] 					http://192.168.9.76:3002/seg_59_rate_3000
+[RECV] receive stream 118 Buff: 5000
+[ 59.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 59000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 120
+[ 60.003][URI] 					http://192.168.9.76:3002/seg_60_rate_3000
+[RECV] receive stream 120 Buff: 5000
+[ 60.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 60000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 122
+[ 61.003][URI] 					http://192.168.9.76:3002/seg_61_rate_3000
+[RECV] receive stream 122 Buff: 5000
+[ 61.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 61000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 124
+[ 62.003][URI] 					http://192.168.9.76:3002/seg_62_rate_3000
+[RECV] receive stream 124 Buff: 5000
+[ 62.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 62000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 126
+[ 63.003][URI] 					http://192.168.9.76:3002/seg_63_rate_3000
+[RECV] receive stream 126 Buff: 5000
+[ 63.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 63000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 128
+[ 64.003][URI] 					http://192.168.9.76:3002/seg_64_rate_3000
+[RECV] receive stream 128 Buff: 5000
+[ 64.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 64000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 130
+[ 65.003][URI] 					http://192.168.9.76:3002/seg_65_rate_3000
+[RECV] receive stream 130 Buff: 5000
+[ 65.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 65000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 132
+[ 66.003][URI] 					http://192.168.9.76:3002/seg_66_rate_3000
+[RECV] receive stream 132 Buff: 5000
+[ 66.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 66000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 134
+[ 67.003][URI] 					http://192.168.9.76:3002/seg_67_rate_3000
+[RECV] receive stream 134 Buff: 5000
+[ 67.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 67000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 136
+[ 68.003][URI] 					http://192.168.9.76:3002/seg_68_rate_3000
+[RECV] receive stream 136 Buff: 5000
+[ 68.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 68000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 138
+[ 69.003][URI] 					http://192.168.9.76:3002/seg_69_rate_3000
+[RECV] receive stream 138 Buff: 5000
+[ 69.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 69000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 140
+[ 70.003][URI] 					http://192.168.9.76:3002/seg_70_rate_3000
+[RECV] receive stream 140 Buff: 5000
+[ 70.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 70000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 142
+[ 71.003][URI] 					http://192.168.9.76:3002/seg_71_rate_3000
+[RECV] receive stream 142 Buff: 5000
+[ 71.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 71000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 144
+[ 72.003][URI] 					http://192.168.9.76:3002/seg_72_rate_3000
+[RECV] receive stream 144 Buff: 5000
+[ 72.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 72000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 146
+[ 73.003][URI] 					http://192.168.9.76:3002/seg_73_rate_3000
+[RECV] receive stream 146 Buff: 5000
+[ 73.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 73000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 148
+[ 74.003][URI] 					http://192.168.9.76:3002/seg_74_rate_3000
+[RECV] receive stream 148 Buff: 5000
+[ 74.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 74000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 150
+[ 75.004][URI] 					http://192.168.9.76:3002/seg_75_rate_3000
+[RECV] receive stream 150 Buff: 5000
+[ 75.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 75000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 152
+[ 76.003][URI] 					http://192.168.9.76:3002/seg_76_rate_3000
+[RECV] receive stream 152 Buff: 5000
+[ 76.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 76000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 154
+[ 77.003][URI] 					http://192.168.9.76:3002/seg_77_rate_3000
+[RECV] receive stream 154 Buff: 5000
+[ 77.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 77000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 156
+[ 78.003][URI] 					http://192.168.9.76:3002/seg_78_rate_3000
+[RECV] receive stream 156 Buff: 5000
+[ 78.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 78000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 158
+[ 79.003][URI] 					http://192.168.9.76:3002/seg_79_rate_3000
+[RECV] receive stream 158 Buff: 5000
+[ 79.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 79000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 160
+[ 80.004][URI] 					http://192.168.9.76:3002/seg_80_rate_3000
+[RECV] receive stream 160 Buff: 5000
+[ 80.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 80000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 162
+[ 81.003][URI] 					http://192.168.9.76:3002/seg_81_rate_3000
+[RECV] receive stream 162 Buff: 5000
+[ 81.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 81000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 164
+[ 82.003][URI] 					http://192.168.9.76:3002/seg_82_rate_3000
+[RECV] receive stream 164 Buff: 5000
+[ 82.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 82000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 166
+[ 83.003][URI] 					http://192.168.9.76:3002/seg_83_rate_3000
+[RECV] receive stream 166 Buff: 5000
+[ 83.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 83000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 168
+[ 84.003][URI] 					http://192.168.9.76:3002/seg_84_rate_3000
+[RECV] receive stream 168 Buff: 5000
+[ 84.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 84000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 170
+[ 85.004][URI] 					http://192.168.9.76:3002/seg_85_rate_3000
+[RECV] receive stream 170 Buff: 5000
+[ 85.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 85000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 172
+[ 86.003][URI] 					http://192.168.9.76:3002/seg_86_rate_3000
+[RECV] receive stream 172 Buff: 5000
+[ 86.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 86000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 174
+[ 87.003][URI] 					http://192.168.9.76:3002/seg_87_rate_3000
+[RECV] receive stream 174 Buff: 5000
+[ 87.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 87000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 176
+[ 88.003][URI] 					http://192.168.9.76:3002/seg_88_rate_3000
+[RECV] receive stream 176 Buff: 5000
+[ 88.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 88000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 178
+[ 89.003][URI] 					http://192.168.9.76:3002/seg_89_rate_3000
+[RECV] receive stream 178 Buff: 5000
+[ 89.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 89000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 180
+[ 90.003][URI] 					http://192.168.9.76:3002/seg_90_rate_3000
+[RECV] receive stream 180 Buff: 5000
+[ 90.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 90000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 182
+[ 91.003][URI] 					http://192.168.9.76:3002/seg_91_rate_3000
+[RECV] receive stream 182 Buff: 5000
+[ 91.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 91000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 184
+[ 92.003][URI] 					http://192.168.9.76:3002/seg_92_rate_3000
+[RECV] receive stream 184 Buff: 5000
+[ 92.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 92000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 186
+[ 93.004][URI] 					http://192.168.9.76:3002/seg_93_rate_3000
+[RECV] receive stream 186 Buff: 5000
+[ 93.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 93000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 188
+[ 94.004][URI] 					http://192.168.9.76:3002/seg_94_rate_3000
+[RECV] receive stream 188 Buff: 5000
+[ 94.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 94000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 190
+[ 95.004][URI] 					http://192.168.9.76:3002/seg_95_rate_3000
+[RECV] receive stream 190 Buff: 5000
+[ 95.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 95000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 192
+[ 96.004][URI] 					http://192.168.9.76:3002/seg_96_rate_3000
+[RECV] receive stream 192 Buff: 5000
+[ 96.038][INFO] Thrp: 90909.1	Buff: 5000
+
+[ADAPTATION] Invoke at time 96000ms 	 Thrp: 90909kbps 	 Buff: 5000ms
+
+[PUSH] in stream 194
+[ 97.004][URI] 					http://192.168.9.76:3002/seg_97_rate_3000
+[RECV] receive stream 194 Buff: 5000
+[ 97.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 97000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 196
+[ 98.004][URI] 					http://192.168.9.76:3002/seg_98_rate_3000
+[RECV] receive stream 196 Buff: 5000
+[ 98.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 98000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 198
+[ 99.004][URI] 					http://192.168.9.76:3002/seg_99_rate_3000
+[RECV] receive stream 198 Buff: 5000
+[ 99.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 99000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 200
+[100.004][URI] 					http://192.168.9.76:3002/seg_100_rate_3000
+[RECV] receive stream 200 Buff: 5000
+[100.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 100000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 202
+[101.004][URI] 					http://192.168.9.76:3002/seg_101_rate_3000
+[RECV] receive stream 202 Buff: 5000
+[101.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 101000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 204
+[102.004][URI] 					http://192.168.9.76:3002/seg_102_rate_3000
+[RECV] receive stream 204 Buff: 5000
+[102.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 102000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 206
+[103.004][URI] 					http://192.168.9.76:3002/seg_103_rate_3000
+[RECV] receive stream 206 Buff: 5000
+[103.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 103000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 208
+[104.004][URI] 					http://192.168.9.76:3002/seg_104_rate_3000
+[RECV] receive stream 208 Buff: 5000
+[104.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 104000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 210
+[105.004][URI] 					http://192.168.9.76:3002/seg_105_rate_3000
+[RECV] receive stream 210 Buff: 5000
+[105.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 105000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 212
+[106.004][URI] 					http://192.168.9.76:3002/seg_106_rate_3000
+[RECV] receive stream 212 Buff: 5000
+[106.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 106000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 214
+[107.004][URI] 					http://192.168.9.76:3002/seg_107_rate_3000
+[RECV] receive stream 214 Buff: 5000
+[107.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 107000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 216
+[108.004][URI] 					http://192.168.9.76:3002/seg_108_rate_3000
+[RECV] receive stream 216 Buff: 5000
+[108.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 108000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 218
+[109.004][URI] 					http://192.168.9.76:3002/seg_109_rate_3000
+[RECV] receive stream 218 Buff: 5000
+[109.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 109000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 220
+[110.004][URI] 					http://192.168.9.76:3002/seg_110_rate_3000
+[RECV] receive stream 220 Buff: 5000
+[110.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 110000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 222
+[111.004][URI] 					http://192.168.9.76:3002/seg_111_rate_3000
+[RECV] receive stream 222 Buff: 5000
+[111.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 111000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 224
+[112.004][URI] 					http://192.168.9.76:3002/seg_112_rate_3000
+[RECV] receive stream 224 Buff: 5000
+[112.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 112000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 226
+[113.004][URI] 					http://192.168.9.76:3002/seg_113_rate_3000
+[RECV] receive stream 226 Buff: 5000
+[113.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 113000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 228
+[114.004][URI] 					http://192.168.9.76:3002/seg_114_rate_3000
+[RECV] receive stream 228 Buff: 5000
+[114.037][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 114000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 230
+[115.004][URI] 					http://192.168.9.76:3002/seg_115_rate_3000
+[RECV] receive stream 230 Buff: 5000
+[115.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 115000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 232
+[116.004][URI] 					http://192.168.9.76:3002/seg_116_rate_3000
+[RECV] receive stream 232 Buff: 5000
+[116.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 116000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 234
+[117.004][URI] 					http://192.168.9.76:3002/seg_117_rate_3000
+[RECV] receive stream 234 Buff: 5000
+[117.036][INFO] Thrp: 96774.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 117000ms 	 Thrp: 96774kbps 	 Buff: 5000ms
+
+[PUSH] in stream 236
+[118.004][URI] 					http://192.168.9.76:3002/seg_118_rate_3000
+[RECV] receive stream 236 Buff: 5000
