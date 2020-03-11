@@ -7,7 +7,7 @@ This project is used in ATHENA lab
 sudo apt-get install make binutils autoconf automake autotools-dev libtool pkg-config zlib1g-dev libcunit1-dev libssl-dev libxml2-dev libev-dev libevent-dev libjansson-dev libc-ares-dev libjemalloc-dev  python-setuptools g++ g++-mingw-w64-i686 git python3-setuptools
 ```
 
-* Install python3.7-dev*
+* Install python3.7-dev
 ```
 sudo apt-get install build-essential checkinstall
 sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
@@ -21,7 +21,7 @@ sudo ./configure --enable-optimizations
 sudo make altinstall
 ```
 	
-* libsystemd-dev*
+* libsystemd-dev
 ```
 sudo apt-get install libsystemd-daemon-dev (for ubuntu 14)
 sudo apt-get install libsystemd-dev (for ubuntu 18)
@@ -44,7 +44,7 @@ sudo make
 sudo make install
 ```
 
-* Find path of SPDY *
+* Find path of SPDY
 ```
 sudo updatedb
 locate libspdylay.so.7
@@ -53,8 +53,9 @@ locate libspdylay.so.7
 ```
 sudo ln -s /usr/local/lib/libspdylay.so.7 /lib/i386-linux-gnu/libspdylay.so.7
 sudo ln -s /usr/local/lib/libspdylay.so.7.2.0 /lib/i386-linux-gnu/libspdylay.so.7.2.0
-```	
+```
 * For x86_64
+```
 sudo ln -s /usr/local/lib/libspdylay.so.7 /lib/x86_64-linux-gnu/libspdylay.so.7
 sudo ln -s /usr/local/lib/libspdylay.so.7.2.0 /lib/x86_64-linux-gnu/libspdylay.so.7.2.0
 sudo ldconfig
@@ -76,10 +77,12 @@ sudo make install
 ll /usr/local/lib/  
 ```
 You should see these files
+```
 libnghttp2.a              libnghttp2.so.5           libnghttp2_asio.la        libnghttp2_asio.so.1.0.0  python3.4/                
 libnghttp2.la             libnghttp2.so.5.7.2       libnghttp2_asio.so   pkgconfig/                
 libnghttp2.so             libnghttp2_asio.a         libnghttp2_asio.so.1      python2.7/
-
+```
+```
 sudo updatedb
 locate libnghttp2.so.14
 ```
@@ -104,7 +107,7 @@ nghttpd --version
 h2load --version
 ```
 * Write a file  so-called server.cpp or find any server files
-
+```
 #include <nghttp2/asio_http2_server.h>
 #include <iostream>
 using namespace nghttp2::asio_http2;
@@ -121,12 +124,11 @@ int main(int argc, char *argv[]) {
 	}
 }
 ```
-5) Build server 
+5) Build server
 ```
 g++ -o KPush_retrans_server KPush_retrans_server.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
 g++ -o Server_KPush_VOD_retrans Server_KPush_VOD_retrans.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
 ```
-	
 6) Run server
 ```
 	LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./server_push
@@ -158,12 +160,11 @@ $ sudo insmod ipfw-mod.ko
 ```
 8.3 Test dummynet
 ```
-	$ sudo -s
-	$ ipfw -q flush
-	$ ipfw -q pipe flush
-	$ ipfw add pipe 3 ip from any ot any
-
-	$ ipfw pipe 3 config bw 1000Kbit/s delay 50ms
+$ sudo -s
+$ ipfw -q flush
+$ ipfw -q pipe flush
+$ ipfw add pipe 3 ip from any ot any
+$ ipfw pipe 3 config bw 1000Kbit/s delay 50ms
 ```
 ==> ping to another connected PC ==> RTT = 10ms
 
