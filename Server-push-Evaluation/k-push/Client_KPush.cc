@@ -68,6 +68,7 @@
 //#include <thread>
 //#include <mutex>
 #include <boost/algorithm/string.hpp>
+#include "intergrated_ITU_T_QoE_extraction.h"
 // #include <boost/bind.hpp>
 //#include <nghttp2/asio_http2_server.h>
 #ifndef O_BINARY
@@ -518,18 +519,20 @@ enum K_PUSH
 };
 enum RETRANSMISSION_METHOD {PROPOSAL, SQUAD};
 
-int       hung_sd = 1000; //ms
-int       hung_MAX_SEGMENTS = 596000/hung_sd + 1;
+int       hung_sd = -1; //ms
+int       hung_MAX_SEGMENTS = -1;
 
 RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
 ABR                     minh_ABR = SARA;
 K_PUSH                  minh_kpush = INDEPENDENT_FIXED_2;
+std::string             minh_kpush_string = "INDEPENDENT_FIXED_2";
 bool                    minh_retrans_extention = false;
+bool                    minh_rebuff_sent = false;
 // SARA ABR -S
-const int I = 2*hung_sd; // act as the buffer enough to start playing
-const int B_a = 10*hung_sd;
-const int B_b = 15*hung_sd;
-const int B_m = 17*hung_sd;
+int I = 2*hung_sd; // act as the buffer enough to start playing
+int B_a = 10*hung_sd;
+int B_b = 15*hung_sd;
+int B_m = 17*hung_sd;
 
 long harmonic_sum_TS = 0;
 double harmonic_sum_MS = 0;
@@ -538,11 +541,11 @@ double SARA_buff_thres = 0;
 // SARA ABR -E
 
 // BBA ABR -S
-const int             BBA_r = 5*hung_sd;
-const int             BBA_cu = 15*hung_sd;
-const int             BBA_Max = 22*hung_sd;
-double                f_buff_value = 0;
-double                BBA_buff_thres = 0;
+int             BBA_r = 5*hung_sd;
+int             BBA_cu = 15*hung_sd;
+int             BBA_Max = 22*hung_sd;
+double          f_buff_value = 0;
+double          BBA_buff_thres = 0;
 // BBA ABR -E
 
 // Hung: for clocks
@@ -567,6 +570,7 @@ int              rebuff_buff_thres_H = 0;
 int              vod_buff_thres_L = 0;
 int              vod_buff_thres_H = 0;
 bool             hung_on_buffering = true;
+int              minh_cur_seg_id = 0;
 
 // BBB video, SD = 1s
 std::vector<int> hung_rate_set_1s = {47, 92, 135, 182, 226, 270, 353, 425, 538, 621, 808, 1100, 1300, 1700, 2200, 2600, 3300, 3800, 4200, 4700}; // BBB video, SD = 1s
@@ -601,7 +605,7 @@ bool                playout_start = false;
 long                playout_start_time = 0;
 
 
-int                 rebuf_num = -1;
+int                 rebuf_num = 0;
 
 int                 retrans_next_id = 0;
 int                 retrans_rate = 0;
@@ -637,6 +641,12 @@ std::vector<int>    minh_thrp_measured_recorder;
 std::vector<int>    minh_rate_old_id_recorder;
 std::vector<int>    minh_rate_ret_id_recorder;
 std::vector<int>    minh_rebuff_duration_recorder;
+
+// for stall event
+std::vector<int>    minh_stall_start_time;
+std::vector<int>    minh_stall_end_time;
+// int                 stall_num = 0;
+double              stall_duration = 0;
 
 long                minh_rebuff_start = 0;
 int                 minh_rebuff_duration = 0;
@@ -714,14 +724,14 @@ enum Adaptation_method { AP, ATL, KPush };
 Adaptation_method    hung_method = KPush;
 int                  hung_cur_rtt = 50;     // ik1 => 220ms
 int                  hung_K = 2;
-int num_of_request=1;
+int                  num_of_request=1;
 
 // Hung: recorders
 std::vector<int>     hung_seg_recorder;
 std::vector<int>     hung_time_recorder;
 std::vector<int>     hung_rate_recorder;
 std::vector<double>  hung_thrp_recorder;
-std::vector<int>     hung_buff_recorder;
+std::vector<int>     hung_buff_recorder;  // in ms
 std::vector<int>     dang_buffer_est;
 std::vector<double>  muy_recorder;
 std::vector<double>  time_download_recorder;
@@ -2179,6 +2189,27 @@ int on_frame_recv_callback2(nghttp2_session *session,
       ;
     }
 
+// MINH 03.03.20 [Server Push Evaluation] ADD-S   
+    if (frame->hd.length > 0 && hung_cur_buff < 2*hung_sd){
+      int inst_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                get_time() - req->timing.response_start_time).count();
+      int now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                get_time() - client->timing.connect_end_time).count();
+      double inst_buff = (hung_cur_buff - inst_download_time) > 0 ?
+                          hung_cur_buff - inst_download_time :
+                          0;
+
+      if (inst_buff < 100 && !hung_on_buffering){
+        minh_rebuff_sent = false;
+        hung_on_buffering = true;
+        hung_cur_buff = 0;
+        minh_stall_start_time.push_back(now);
+        rebuf_num ++;
+        std::cout << "\n\t[MINH] INFO: ON RECEIVING REBUFFERING from " << now << "ms rebuf_num: " << rebuf_num << std::endl; 
+      }      
+    }
+// MINH 03.03.20 [Server Push Evaluation] ADD-S   
+
     if (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
       req->record_response_end_time();
       ++client->success;
@@ -2368,12 +2399,11 @@ int hung_compute_max_adapted_rate (double thrp) {
 }
 
 // Hung: rebufferring phase
-void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
-  rebuf_num ++;
-
+void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {  
+  minh_rebuff_sent = true;
   int num_of_segs = rebuff_buff_thres_L/hung_sd;
 
-  if (num_of_segs* hung_sd < rebuff_buff_thres_L)
+  if (num_of_segs*hung_sd < rebuff_buff_thres_L)
       num_of_segs ++;
 
   if (hung_sys_time / hung_sd + num_of_segs > hung_MAX_SEGMENTS) {
@@ -2386,7 +2416,7 @@ void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
   std::string num_string = std::to_string(num_of_segs);
 
   if (client->add_request(hung_uri+"/rebuff/segment_duration="+std::to_string(hung_sd)+
-                          "/bitrate="+rate_string+"/num="+num_string, 
+                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id), 
                           dang_data_prd, dang_data_length, dang_pri_spec)) {
     if (submit) {
       if(hung_cur_buff > rebuff_buff_thres_H){
@@ -2422,7 +2452,7 @@ void hung_req_vod_rate(HttpClient *client, int new_rate, int m_next_num) {
   std::string num_string = std::to_string(num_of_segs);
 
   if (client->add_request(hung_uri+"/req_vod/segment_duration="+std::to_string(hung_sd)+
-                          "/bitrate="+rate_string+"/num="+num_string, 
+                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id), 
                           dang_data_prd, dang_data_length, dang_pri_spec)) {
     if(hung_cur_buff > vod_buff_thres_H){
       std::cout << "Curr buffer" << hung_cur_buff << " -- WAITING for " << (hung_cur_buff-vod_buff_thres_H) << "ms" << std::endl;
@@ -2435,7 +2465,7 @@ void hung_req_vod_rate(HttpClient *client, int new_rate, int m_next_num) {
                  get_time() - client->timing.connect_end_time).count();  
   }
 
-  std::cout << "[REQUEST NEW ] bitrate " << rate_string << "\tnum " << num_string 
+  std::cout << "[REQUEST NEW] bitrate " << rate_string << "\tnum " << num_string 
                             << std::endl << std::endl;  
 
   client->signal_write();
@@ -2460,15 +2490,25 @@ void Adaptation_Logic (HttpClient *client) {
   int m_next_rate = 0;
   int m_next_k = 0;
 
-  if (hung_cur_buff < hung_sd) {  // after downloading a segment, buffer is less
-    hung_on_buffering = true;
-    hung_cur_buff = 0;
+  if (hung_cur_buff < hung_sd) {  // after downloading a segment, buffer is less than 1 segment duration ==> rebuffering
+    if (!hung_on_buffering){  // if buffering is not detected in frame_recv_callback2
+      hung_on_buffering = true;
+      hung_cur_buff = 0;
+      rebuf_num ++;
+      std:cout << "\n\t[MINH] INFO: rebuf_num: " << rebuf_num << std::endl;
+      minh_stall_start_time.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                       get_time() - client->timing.connect_end_time).count());      
+    }
+
     hung_req_vod_rebuff(client);
     return;
   } 
 
-  if (hung_on_buffering && hung_cur_buff == hung_tar_buff) {
+  if (hung_on_buffering && hung_cur_buff >= hung_tar_buff) {
     hung_on_buffering = false;
+
+    minh_stall_end_time.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                     get_time() - client->timing.connect_end_time).count());
 // MINH 26.02.20 [Server Push Evaluation] DEL-S    
 #if 0    
     hung_req_vod_rate(client, 200);
@@ -2549,7 +2589,6 @@ void Adaptation_Logic (HttpClient *client) {
 
   // double avail_thrp = (1 - hung_safety_margin) * avg_thrp_with_RTT; 
   // int rate_candidate = hung_compute_max_adapted_rate (avail_thrp);
- 
   hung_req_vod_rate(client, m_next_rate, m_next_k);
 }
 int getIndexByRate(int rate){
@@ -2590,9 +2629,8 @@ void minh_get_rate_set(int m_hung_sd){
 void minh_get_ABR_parameters(ABR m_ABR){
   switch (minh_ABR){
     case AGG:
-      hung_tar_buff = 16000;
-      buff_max       = 20000;
-      minh_rebuff_exit = hung_tar_buff;
+      hung_tar_buff     = 0.8*buff_max;
+      minh_rebuff_exit  = hung_tar_buff;
 
       rebuff_buff_thres_L = hung_tar_buff;
       rebuff_buff_thres_H = hung_tar_buff;
@@ -2606,8 +2644,14 @@ void minh_get_ABR_parameters(ABR m_ABR){
                 << std::endl;  
       break;
     case SARA:
+      // SARA ABR -S
+      I = 2*hung_sd; // act as the buffer enough to start playing
+      B_a = 10*hung_sd;
+      B_b = 15*hung_sd;
+      B_m = buff_max;//17*hung_sd; 
+
       hung_tar_buff    = B_a;
-      buff_max         = B_m;
+      // buff_max         = B_m;
       minh_rebuff_exit = I;
 
       rebuff_buff_thres_L = I;
@@ -2622,6 +2666,13 @@ void minh_get_ABR_parameters(ABR m_ABR){
                 << std::endl;   
       break;
     case BBA:
+      // BBA ABR -S
+      BBA_r = 5*hung_sd;
+      BBA_cu = 15*hung_sd;
+      BBA_Max = 22*hung_sd;
+      f_buff_value = 0;
+      BBA_buff_thres = 0;    
+
       hung_tar_buff    = BBA_r + BBA_cu;
       buff_max         = BBA_Max;    
       minh_rebuff_exit = BBA_r;
@@ -2864,7 +2915,7 @@ double get_smooth_thrp();
 ////////////////////////////////////////////////////////////////////////////////////////////////
 int AGG_adaptation_method(){
   std::cout << "********* AGG **********" << std::endl;
-  double m_thrp_est = get_smooth_thrp();
+  double m_thrp_est = hung_thrp_recorder.at(hung_rate_recorder.size()-1);//get_smooth_thrp();
   return hung_compute_max_adapted_rate(m_thrp_est * (1-hung_safety_margin));
 }
 
@@ -3707,15 +3758,20 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
 
       // Hung: record the results
       if (req->stream_id % 2 == 0) {
-         num_of_request++;
+        
+        minh_cur_seg_id ++;
+        std::cout << "\n\t[MINH] INFO: minh_cur_seg_id: " << minh_cur_seg_id << std::endl;
+
         hung_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                      get_time() - client->timing.connect_end_time).count();
 
         long download_intv_us = std::chrono::duration_cast<std::chrono::microseconds>(
                      req->timing.response_end_time - req->timing.response_start_time).count();
-        std::cout << "[INFO] measuared throughput in " << (download_intv_us / 1000) << "ms";
-        auto temp_thrp = (double)req->response_len * 8 * 1000 / download_intv_us;
-        if (download_intv_us > 50000 || temp_thrp < 1500)
+        std::cout << "\n\t[MINH] INFO: measuared throughput in " << (download_intv_us / 1000) << "ms";
+        last_seg_data = req->response_len;
+        auto temp_thrp = (double)last_seg_data * 8 * 1000 / download_intv_us;
+        //if (download_intv_us > 50000 || temp_thrp < 1500)
+        if (download_intv_us > 50000)
           hung_inst_thrp = temp_thrp;
         else 
           hung_inst_thrp = 1500;
@@ -3735,14 +3791,20 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
         int rate = hung_get_rate_from_uri(req->make_reqpath());
         hung_rate_recorder.push_back(rate);
 
-        if (hung_on_buffering)
+        if (hung_on_buffering){
+          if (minh_rebuff_sent)
             hung_cur_buff += hung_sd;
-        else
-            hung_cur_buff += hung_sd - (hung_sys_time - hung_last_adapt_time);
+          else
+            hung_cur_buff = 0;          
+        }
+        else{
+            hung_cur_buff = (hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time)) > 0 ?
+                            hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time) : 
+                            0;
+        }
         hung_buff_recorder.push_back(hung_cur_buff);
 
         hung_last_adapt_time = hung_sys_time;
-
       // Hung: add new requests. Note that if a deadlock happens, check the number of segments in the server
       } else {
         Adaptation_Logic(client);
@@ -3788,21 +3850,27 @@ void print_stats(const HttpClient &client) {
   timeInfo = localtime(&rawTime);
   strftime(timeBuff, 20, "%F_%H%M%S", timeInfo);
 
-  std::cout << "Time now: " << timeBuff;
-
-  int a = system("sudo killall bash ./complex.sh");
+  // kill dummynet
+  const string dummynet_kill = "sudo killall bash ./complex_rtt_" + std::to_string (minh_RTT) + ".sh";
+  int a = system(dummynet_kill.c_str());
 
   // create a direction
-  const string result_direction = "/home/minh/Documents/http_result/HTTP2_PushBased_Evaluation/" + minh_get_ABR_name(minh_ABR) + 
-                            "/SD_" + std::to_string(hung_sd) + "ms" + 
-                            "/Buff_" + std::to_string(buff_max) + "ms/" +
-                            "/RTT_" + std::to_string(minh_RTT) + "ms/"  +
+  string result_direction = "/home/minh/Documents/http_result/HTTP2_PushBased_Evaluation/" + minh_get_ABR_name(minh_ABR) + 
+                            "/SD_"    + std::to_string(hung_sd) + "ms" + 
+                            "/Kpush_" + minh_kpush_string       +
+                            "/Buff_"  + std::to_string(buff_max) + "ms/" +
+                            "/RTT_"   + std::to_string(minh_RTT) + "ms/"  +
                             std::string(timeBuff);
   // boost::filesystem::create_directories (result_direction); 
   const string create_directories = "mkdir -p " + result_direction;                           
   int a_1 = system(create_directories.c_str()); 
-  const string cp_files = 
-    "sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/complex.sh " + result_direction;                      
+
+  string temp1 = "complex_rtt_";
+  string temp2 = ".sh ";
+  string cp_files = 
+    "sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/"
+    + temp1 + std::to_string (minh_RTT) + temp2 + result_direction;     
+  std::cout << "cp_files: " << cp_files << std::endl;                 
   int b = system(cp_files.c_str());
 
   std::vector<Request *> reqs;
@@ -3901,8 +3969,8 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   double  buff_avg = 0;
   double  buff_min = 1000;
 
-  int     stall_num = 0;
-  double  stall_duration = 0;
+  double QoE_score = 0;
+
 
   const int num_of_segment = hung_rate_recorder.size();
   
@@ -3937,6 +4005,30 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   
   MyExcelFile.close();
 
+  // Intergrated_ITU_T_QoE_extraction qoe_measurement;
+  // QoE_score = qoe_measurement.QoE_measurement(  result_direction, 
+  //                                               hung_sd,
+  //                                               hung_rate_recorder,
+  //                                               hung_buff_recorder,
+  //                                               minh_stall_start_time,
+  //                                               minh_stall_end_time);
+  rebuf_num = minh_stall_end_time.size() - 1;
+
+  std::cout << "\n\t[MINH] Stall info"
+            << "\n\t rebuf_num: " << rebuf_num 
+            << "\t start_time_size : "<< minh_stall_start_time.size() 
+            << "\t end_time_size: "<< minh_stall_end_time.size() 
+            << std::endl;
+
+  for (int i = 0; i < minh_stall_end_time.size(); i ++){
+    std::cout << "\t stall time: " << i + 1
+              << "\t start: " << minh_stall_start_time.at(i)
+              << "\t end: "   << minh_stall_end_time.at(i) <<  std::endl;
+    if (i > 0){
+      stall_duration += minh_stall_end_time.at(i) - minh_stall_start_time.at(i);
+    }              
+  }   
+
   log.open(result_direction+"/metrics.txt");
   log << "- quality_avg: \t" << quality_avg/num_of_segment << endl;
   log << "- quality_max: \t" << quality_max << endl;
@@ -3946,8 +4038,21 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   log << "- switch_max: \t" << switch_max << endl;
   log << "- switch_num: \t" << switch_num << endl << endl;
 
-  log << "- buff_avg: \t" << buff_avg/num_of_segment << endl;
-  log << "- buff_min: \t" << buff_min << endl;
+  log << "- buff_avg: \t" << buff_avg/num_of_segment  << "ms" << endl;
+  log << "- buff_min: \t" << buff_min  << "ms" << endl << endl;
+
+  log << "- stall_num: \t" << rebuf_num << endl;
+  log << "- stall_dur: \t" << stall_duration << "ms" << endl << endl;
+
+  log << "- request_num: \t" << num_of_request << endl;
+
+  log << "************stall event*************" << std::endl;
+  for (int i = 0; i < minh_stall_end_time.size(); i ++){
+    log << "\nstall start: " << minh_stall_start_time.at(i) << '\t'
+        << "stall end: " << minh_stall_end_time.at(i) << std::endl;
+  }
+
+  // log << "- QoE score: \t" << QoE_score << endl << endl;
 
   log.close();
 
@@ -4082,9 +4187,14 @@ int communicate(
         //                pri_spec);        
         minh_get_rate_set(hung_sd);
         minh_get_ABR_parameters(minh_ABR);
+
+        const string dummynet_run = "sudo ./complex_rtt_" + std::to_string (nghttp2::minh_RTT) + ".sh &";
+        std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
+        if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }
         // if (minh_network_ack == YES){
         //   minh_get_origin_thrp();
         // }
+        minh_stall_start_time.push_back(0);
         hung_req_vod_rebuff(&client, false);
         break;
       }
@@ -4724,17 +4834,19 @@ int main(int argc, char **argv) {
       std::cout << "[CONFIG] ABR: " << optarg << "in enum: " << minh_ABR << std::endl;
       break;
     case 'Z':
+      minh_kpush_string = optarg;
+      std::cout << "\n\t[MINH] CONFIG: minh_kpush_string: " << minh_kpush_string << std::endl;
       if (strcmp(optarg, "INDEPENDENT_FIXED_2") == 0){
         minh_kpush = INDEPENDENT_FIXED_2;
       }
       else if (strcmp(optarg, "INDEPENDENT_FIXED_3") == 0){
-        minh_kpush = INDEPENDENT_FIXED_2;
-      }
-      else if (strcmp(optarg, "INDEPENDENT_FIXED_4") == 0){
         minh_kpush = INDEPENDENT_FIXED_3;
       }
-      else if (strcmp(optarg, "INDEPENDENT_FIXED_5") == 0){
+      else if (strcmp(optarg, "INDEPENDENT_FIXED_4") == 0){
         minh_kpush = INDEPENDENT_FIXED_4;
+      }
+      else if (strcmp(optarg, "INDEPENDENT_FIXED_5") == 0){
+        minh_kpush = INDEPENDENT_FIXED_5;
       }
 
 
@@ -4774,6 +4886,27 @@ int main(int argc, char **argv) {
       break;
     case 'S':
       hung_sd = std::stoi(optarg);
+      switch(hung_sd){
+        case 500:
+          hung_MAX_SEGMENTS = 596*2+1;
+          break;
+        case 1000:
+          hung_MAX_SEGMENTS = 597;//597;
+          break;
+        case 2000:
+          hung_MAX_SEGMENTS = 300;//300;
+          break;
+        case 4000:
+          hung_MAX_SEGMENTS = 151;//151;
+          break;
+        case 6000:
+          hung_MAX_SEGMENTS = 101;//101;
+          break;
+        default:
+          std::cerr << "No Segment duration available: " << hung_sd << std::endl;
+          exit(EXIT_FAILURE);
+          break;
+      }
       std::cout << "[CONFIG] segment-duration: " << hung_sd << "ms" << std::endl;
       // ABR minh_ABR = 0;
       break;    
@@ -4910,9 +5043,11 @@ int main(int argc, char **argv) {
 } // namespace nghttp2
 
 int main(int argc, char **argv) {
-  // Hung:
-  //if (system("./start.sh &")) {std::cout << "could not run DummyNet" << std::endl; } 
-  if (system("sudo ./complex.sh &")) {std::cout << "could not run DummyNet" << std::endl; }
+  // run dummynet to shape the network
+
+  // const string dummynet_run = "sudo ./complex_rtt_" + std::to_string (nghttp2::minh_RTT) + ".sh &";
+  // std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
+  // if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }
 
   return nghttp2::run_app(nghttp2::main, argc, argv);
 }

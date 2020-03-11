@@ -10,12 +10,12 @@ using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
 using namespace boost::posix_time;
 
-int num;
+int   num;
 
-int segment_duration = 2000; // 1000ms
-auto avail_seg = std::make_shared<int>();
-auto server_seg = std::make_shared<int>();
-int MAX_SEGMENTS = 30;//596000/segment_duration + 1;
+int   segment_duration = 2000; // 1000ms
+auto  avail_seg = std::make_shared<int>();
+auto  server_seg = std::make_shared<int>();
+int   MAX_SEGMENTS = 3000;//596000/segment_duration + 1;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -28,6 +28,7 @@ int           retrans_num = 0;
 int           retrans_num_decrease = 0;
 int           next_bitrate = 0;
 int           next_num = 0;
+int           req_seg_id = 0;
 int           minh_server_seg = 0; // useless
 
 bool          squad_terminate_check = false;
@@ -57,109 +58,28 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
 }
 
 void push_remaining_files(const response *res, bool retrans_check) {
-  if (*server_seg + 1 >= MAX_SEGMENTS) {
-    std::cout << "********************* DONE ******************" << std::endl;
-    res->write_head(200);
-    res->end();          
-    return;
-  } 
+  // if (*server_seg + 1 >= MAX_SEGMENTS) {
+  //   std::cout << "********************* DONE ******************" << std::endl;
+  //   res->write_head(200);
+  //   res->end();          
+  //   return;
+  // } 
 
-  if (*server_seg > MAX_SEGMENTS - 10){
-    std::cout << '\a' << std::endl;
-  }
+  // if (*server_seg > MAX_SEGMENTS - 10){
+  //   std::cout << '\a' << std::endl;
+  // }
 
-  // if all required segments were pushed. Note that it must not combined 
-  // with the previous instruction
-  if (retrans_check){
-    int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;    
-    if (retrans_num_decrease == 0 || squad_terminate_check) { // retransmitted completely
-        
-        if (squad_terminate_check){
-          std::cout << "CANCELLED RETRANSMISISON" << std::endl;
-        }
-        retrans_seg_id  = 0;
-        retrans_num     = 0;
-        retrans_bitrate = 0;
-        squad_terminate_check = false;
-
-        res->write_head(200);
-        res->end();
-        return; 
-    } 
-
-    std::cout << "[Minh] Prepare to REsend seg " << pushing_seg << std::endl;
-    print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
-    retrans_num_decrease--; 
-    // std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
-    boost::system::error_code ec;
-    // std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~boost::system::error_code: " << ec << std::endl;
-    auto push = res->push(ec, "GET", "/RETRANS_"+std::to_string(pushing_seg)+"_rate_"+std::to_string(retrans_bitrate)); 
-
-    push->on_close([res](uint32_t error_code) { // khi push xong segment cho client
-      if (!error_code){
-        std::cout << "RETRANSMITTED seg #" << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << " bitrate " << retrans_bitrate 
-                          << " at time: " << get_time() << "ms" << std::endl << std:: endl; 
-      } 
-      else if (error_code == NGHTTP2_CANCEL){ // received the RST_STREAM from the client
-        std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINATED seg # " << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << std::endl;
-/*Minh Terminate only ONE retransmitted segment MOD-S*/
-#if 0        
-/*Minh Terminate all next retransmitted segment ADD-S*/
-        retrans_seg_id  = 0;
-        retrans_num     = 0;
-        retrans_bitrate = 0;
-        squad_terminate_check = false;
-        error_code = 0;
-        res->write_head(200);
-        res->end();    
-        return; 
-/*Minh Terminate all next retransmitted segment ADD-E*/
-#else
-       push_remaining_files(res, true); 
-#endif
-/*Minh Terminate only ONE retransmitted segment MOD-E*/        
-      }
-
-      if (retrans_num_decrease == 0){  // check xem day co phai segmet cuoi cung k, 
-        retrans_seg_id  = 0;
-        retrans_num     = 0;
-        retrans_bitrate = 0;        
-        on_pushing_in_periodic_mode = false;
-        res->write_head(200);
-        res->end();
-      } 
-      else{
-        on_pushing_in_periodic_mode = true;
-        push_remaining_files(res, true);
-      }
-    });
-
-    push->write_head(200);
-    // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
-    push->end(file_generator("/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
-                              +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-                             "s"+std::to_string(pushing_seg)+".m4s"));    
-
-  }
-  else{
-
+  {
     if (next_num == 0) { return; }
 
-    print_new_seg(*server_seg+1, next_bitrate, false);
+    print_new_seg(req_seg_id++, next_bitrate, false);
     next_num--;
 
     boost::system::error_code ec;
-    auto push = res->push(ec, "GET", "/seg_"+std::to_string(*server_seg+1)+"_rate_"+std::to_string(next_bitrate));
+    auto push = res->push(ec, "GET", "/seg_"+std::to_string(req_seg_id)+"_rate_"+std::to_string(next_bitrate));
 
     push->on_close([res](uint32_t error_code) {
-      // std::cout << "======================== pushing next segment. error_code: " << error_code << std::endl;
-      // if (!error_code) {                    // if CANCEL is not sent
-      //   *server_seg = *server_seg + 1;
-      //   std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
-      //                     << " at time: " << get_time() << "ms" << std::endl;
-      // }
-      *server_seg = *server_seg + 1;
-      std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
+      std::cout << "Sent seg #" << req_seg_id<< " bitrate " << next_bitrate 
                         << " at time: " << get_time() << "ms" << std::endl;
 
       if (next_num == 0) {
@@ -179,7 +99,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(next_bitrate)));
     push->end(file_generator("/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
                               +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-                             "s"+std::to_string(*server_seg+1)+".m4s"));    
+                             "s"+std::to_string(req_seg_id)+".m4s"));    
   }
 
 
@@ -192,7 +112,8 @@ void push_file(                                 ////////////////////////////////
   if (ec || *closed) {
     return;
   }
-
+  if (retrans_check == true)
+    std::cout << "************************** RETRANS ***************************" << std::endl;
   // the time instant of the next segment, note that it is available only if num > 0
   // // Hung_comment: Cai nay chi la dia chi thoi nhe!
   // if (num > 0) {
@@ -239,11 +160,12 @@ int main(int argc, char *argv[]) {
 
     // *server_seg = get_time() / segment_duration;
 
-    // get url, e.g. http://127.0.0.1:3002/rebuff/segment_duration=1000/bitrate=2000/num=4 -> segment duration = 1000ms, bitrate = 2000kbps, number of segments = 4.
+    // get url, e.g. http://172.16.23.1:3002/rebuff/segment_duration=1000/bitrate=200/num=4/start_seg=5
+    // -> segment duration = 1000ms, bitrate = 2000kbps, number of segments = 4, from seg 5th (5, 6, 7, 8).
     // currently, the special symbol & is not allowed in the url
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 5) {
+    if (strs.size() != 6) {
       std::cout << "[ERROR] : url is incorrect" << std::endl;
       std::cout << "[ERROR] : url: " << req.uri().path << std::endl;
       return;
@@ -253,13 +175,19 @@ int main(int argc, char *argv[]) {
     for (int i = 2; i < strs.size(); i++) {
       boost::split(temp, strs[i], boost::is_any_of("="));    
       if (temp[0] == "segment_duration")
-          segment_duration = std::stoi(temp[1]);
+        segment_duration = std::stoi(temp[1]);
       else if (temp[0] == "bitrate")
-          next_bitrate = std::stoi(temp[1]);
-      else
-          next_num = std::stoi(temp[1]); 
+        next_bitrate = std::stoi(temp[1]);
+      else if (temp[0] == "num")
+        next_num = std::stoi(temp[1]); 
+      else if (temp[0] == "start_seg"){
+        req_seg_id = std::stoi(temp[1]); // push <nex_num> segments from segment <req_seg_id+1>th
+        if (req_seg_id == 0){
+          start_time = microsec_clock::local_time();  // count clock again after every session
+        }
+      }
     }
-    MAX_SEGMENTS = 596000/segment_duration + 1;
+
     // compute the available time instant of the next segment
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
 
@@ -277,17 +205,18 @@ int main(int argc, char *argv[]) {
       timer->cancel();
       *closed = true;
     });
-    timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
-    // push_file(timer,&res,closed,ec, true);
+    // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
+    push_file(timer,&res,closed,ec, false);
   });
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   server.handle("/req_vod/", [](const request &req, const response &res) {
     // get url, e.g. http://127.0.0.1:3002/req_vod/segment_duration=1000/bitrate=2000/num=4 -> segment duration = 1000ms, bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
     // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 5) {
+    if (strs.size() != 6) {
       std::cout << "[ERROR] : url is incorrect req_vod " << strs.size() <<  std::endl;
       return;
     }
@@ -296,11 +225,13 @@ int main(int argc, char *argv[]) {
     for (int i = 2; i < strs.size(); i++) {
       boost::split(temp, strs[i], boost::is_any_of("="));    
       if (temp[0] == "segment_duration")
-          segment_duration = std::stoi(temp[1]);
+        segment_duration = std::stoi(temp[1]);
       else if (temp[0] == "bitrate")
-          next_bitrate = std::stoi(temp[1]);
-      else
-          next_num = std::stoi(temp[1]); 
+        next_bitrate = std::stoi(temp[1]);
+      else if (temp[0] == "num")
+        next_num = std::stoi(temp[1]); 
+      else if (temp[0] == "start_seg")
+        req_seg_id = std::stoi(temp[1]);  // push <nex_num> segments from segment <req_seg_id+1>th
     }
 
     // compute the available time instant of the next segment
@@ -320,8 +251,8 @@ int main(int argc, char *argv[]) {
       *closed = true;
     });
     std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
-    timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
-    // push_file(timer,&res,closed,ec, false);
+    // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
+    push_file(timer,&res,closed,ec, false);
   });
 
 /* 191103 Minh [Kpush with retransmission] ADD-S*/
@@ -371,8 +302,8 @@ int main(int argc, char *argv[]) {
       *closed = true;
     });
     
-   timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, true));
-    // push_file(timer,&res,closed,ec, true);
+   // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, true));
+    push_file(timer,&res,closed,ec, false);
   });
 
   server.handle("/terminate_segment/", [](const request &request, const response &res) {

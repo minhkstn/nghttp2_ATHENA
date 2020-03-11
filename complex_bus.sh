@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 ipfw -q flush
 ipfw -q pipe flush
-ipfw add pipe 3 ip from 192.168.168.1 to me
-ipfw add pipe 3 ip from me to 192.168.168.1
+ipfw add pipe 3 ip from any to me
+ipfw add pipe 3 ip from me to any
 
 ipfw pipe 3 config bw 46722Kbit/s delay 25ms
 sleep 1.0s
@@ -334,7 +334,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 2161Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 14709Kbit/s delay 25ms
@@ -373,7 +373,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 2178Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 7300Kbit/s delay 25ms
@@ -466,7 +466,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 10622Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 22074Kbit/s delay 25ms
@@ -478,7 +478,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 5435Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 13515Kbit/s delay 25ms
@@ -490,7 +490,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 5402Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 21832Kbit/s delay 25ms
@@ -547,13 +547,13 @@ sleep 1.0s
 ipfw pipe 3 config bw 2318Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 647Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 29332Kbit/s delay 25ms
@@ -913,7 +913,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 528Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 12697Kbit/s delay 25ms
@@ -937,7 +937,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 2243Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 23336Kbit/s delay 25ms
@@ -952,7 +952,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 9134Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 10406Kbit/s delay 25ms
@@ -976,7 +976,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 2771Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 5769Kbit/s delay 25ms
@@ -1045,7 +1045,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 2318Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 22201Kbit/s delay 25ms
@@ -1594,7 +1594,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 6556Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 11474Kbit/s delay 25ms
@@ -1843,7 +1843,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 10762Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 22274Kbit/s delay 25ms
@@ -1948,13 +1948,13 @@ sleep 1.0s
 ipfw pipe 3 config bw 3623Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 452Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 17211Kbit/s delay 25ms
@@ -2155,7 +2155,7 @@ sleep 1.0s
 ipfw pipe 3 config bw 16251Kbit/s delay 25ms
 sleep 1.0s
 
-ipfw pipe 3 config bw 0Kbit/s delay 25ms
+ipfw pipe 3 config bw 50bit/s delay 25ms
 sleep 1.0s
 
 ipfw pipe 3 config bw 35692Kbit/s delay 25ms

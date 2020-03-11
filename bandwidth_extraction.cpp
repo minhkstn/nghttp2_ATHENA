@@ -24,7 +24,7 @@ int main(){
 	original_file.open("original_bw_bus.txt");
 	bandwidth_trace_file.open("complex_bus.sh");	
 
-	bandwidth_trace_file << "#!/usr/bin/env bash\nipfw -q flush\nipfw -q pipe flush\nipfw add pipe 3 ip from 192.168.168.1 to me\nipfw add pipe 3 ip from me to 192.168.168.1\n\n";
+	bandwidth_trace_file << "#!/usr/bin/env bash\nipfw -q flush\nipfw -q pipe flush\nipfw add pipe 3 ip from any to me\nipfw add pipe 3 ip from me to any\n\n";
 
 	for (auto a = thrp.begin()+1; a != thrp.end(); a++){
 		original_file << (*a)/125 << "\n";	// in kbps
