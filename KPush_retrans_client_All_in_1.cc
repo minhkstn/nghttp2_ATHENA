@@ -500,11 +500,11 @@ int submit_request(HttpClient *client, const Headers &headers, Request *req) {
 enum ABR {AGGRESSIVE, SARA, BBA};
 enum RETRANSMISSION_METHOD {PROPOSAL, SQUAD};
 
-int       hung_sd = 1000; //ms
+int       hung_sd = 2000; //ms
 int       hung_MAX_SEGMENTS = 596000/hung_sd + 1;
 
 const RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
-const ABR                     minh_ABR = SARA;
+const ABR                     minh_ABR = AGGRESSIVE;
 const bool                    minh_retrans_extention = false;
 // SARA ABR -S
   const int I = 2*hung_sd; // act as the buffer enough to start playing
@@ -3030,18 +3030,7 @@ void retransmission_method(HttpClient *client){
     return;
   } 
 
-  // if (hung_on_buffering && hung_cur_buff < I) { // still REBUFFERING - For SARA ABR
-  //   buffering_just_stop = false;
-  //   return;
-  // }  
-
-  // if (hung_on_buffering && hung_cur_buff < BBA_r) { // still REBUFFERING - For BBA ABR
-  //   buffering_just_stop = false;
-  //   return;
-  // }    
   if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //rebuffering ends for Aggressive ABR
-  // if (hung_on_buffering && hung_cur_buff >= I) { //rebuffering ends - for SARA ABR
-  // if (hung_on_buffering && hung_cur_buff >= BBA_r) { //rebuffering ends - for BBA ABR    
       if (playout_start == false){
         playout_start = true;
         playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
@@ -3078,9 +3067,6 @@ void retransmission_method(HttpClient *client){
       std::cout << "******************************** NO ABR AVAILABLE *****************************" << std::endl;
       break;
   }
-  // new_rate = hung_compute_max_adapted_rate(thrp_est * (1-hung_safety_margin)); // PP1
-  // new_rate = SARA_adaptation_method(); // for SARA ABR
-  // new_rate = BBA_adaptation_method(); // for BBA ABR
   next_num = (hung_sd >= 4000) ? 1 : Duc_K_determination();
 
   if (!hung_on_buffering && !buffering_just_stop){ //just stop rebuffering
@@ -3353,19 +3339,8 @@ void retransmission_SQUAD_method(HttpClient *client){
     return;
   } 
 
-  // if (hung_on_buffering && hung_cur_buff < I) { // still REBUFFERING - For SARA ABR
-  //   buffering_just_stop = false;
-  //   return;
-  // }
-
-  // if (hung_on_buffering && hung_cur_buff < BBA_r) { // still REBUFFERING - For BBA ABR
-  //   buffering_just_stop = false;
-  //   return;
-  // }
 
   if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //rebuffering ends for Aggressive ABR
-  // if (hung_on_buffering && hung_cur_buff >= I) { //rebuffering ends - for SARA ABR
-  // if (hung_on_buffering && hung_cur_buff >= BBA_r) { //rebuffering ends - for BBA ABR
       if (playout_start == false){
         playout_start = true;
         playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment

@@ -548,6 +548,9 @@ double          f_buff_value = 0;
 double          BBA_buff_thres = 0;
 // BBA ABR -E
 
+// get_k_ind_adapt_2()
+bool  ind_adapt_2_first_push_cycle = true;
+int   ind_adapt_2_last_k = 0;
 // Hung: for clocks
 int hung_sys_time = 0;
 int hung_last_adapt_time = 0;
@@ -662,6 +665,7 @@ nghttp2_priority_spec dang_pri_spec;
 
 std::vector<int>      retrans_seg_id_recorder;
 double                thrp_est = 0;
+double                evaluation_thrp_est = 0;
 double                division_retrans_seg_margin = 0.05;
 double                division_retrans_buff_margin = 0;
 std::vector<double>   retrans_thrp_recorder;
@@ -691,13 +695,6 @@ bool                  sub_whole_occupy_check = false;
 int                   sub_start_time = 0;
 int                   sub_download_duration = 0;
 
-
-// const double          BBA_a = 1.0*(hung_rate_set.at(hung_rate_set.size()-1) - hung_rate_set.at(0))/(BBA_cu);
-// const double          BBA_b = hung_rate_set.at(0) - 1.0*BBA_r*BBA_a;
-// std::vector<double>   bandwidth_ratio_LUT = {0.0, 1.0, 2.0, 3.1, // 0 1 2 3
-//                                                3.8, 5.0, 5.3, 5.4, // 4 5 6 7
-//                                                5.6, 5.7, 5.8, 6.0}; //8 9 10 11
-
 long                  sub_seg_recv_data = 0; 
 double                minh_instant_thrp = 0; 
 long                  sub_download_intv_us = 0;
@@ -705,9 +702,6 @@ long                  sub_last_time = 0;
 bool                  first_seg_frame = true; 
 long                  sub_cummulate_seg_recev_data = 0;  
 
-std::vector<double>   bandwidth_ratio_LUT = {0.0, 1.0, 2.0, 2.5, // 0 1 2 3
-                                               2.5, 4, 4, 3.7, // 4 5 6 7
-                                               4, 4, 4, 4}; //8 9 10 11
 
 std::vector<double>   minh_pri_proportion_recorder;
 double                minh_cur_thrp;
@@ -2520,12 +2514,15 @@ void Adaptation_Logic (HttpClient *client) {
 
   switch (minh_ABR){
     case AGG:
+      evaluation_thrp_est = hung_thrp_recorder.at(hung_rate_recorder.size()-1);
       m_next_rate = AGG_adaptation_method();
       break;
     case SARA:
+      evaluation_thrp_est = get_harmonic_thrp();
       m_next_rate = SARA_adaptation_method();
       break;
     case BBA:
+      evaluation_thrp_est = get_smooth_thrp();
       m_next_rate = BBA_adaptation_method();
       break;
     default:
@@ -2589,7 +2586,9 @@ void Adaptation_Logic (HttpClient *client) {
 
   // double avail_thrp = (1 - hung_safety_margin) * avg_thrp_with_RTT; 
   // int rate_candidate = hung_compute_max_adapted_rate (avail_thrp);
+  // std::cout << "\n\t[MINH] INFO: next quality: " << m_next_rate << "\t next # segs: " << m_next_k << std::endl;
   hung_req_vod_rate(client, m_next_rate, m_next_k);
+  std::cout << "************************************************************************************************" << std::endl;
 }
 int getIndexByRate(int rate){
   for(int i=0;i<hung_rate_set.size();i++){
@@ -2702,10 +2701,10 @@ void minh_get_ABR_parameters(ABR m_ABR){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+/* as in Duc et.al paper:
+[0] "Adaptation method for video streaming over http/2" - https://www.jstage.jst.go.jp/article/comex/5/3/5_2015XBL0177/_pdf
+*/
 int get_k_ind_adapt_1(){
-  // as in Duc et.al paper:
-  // "Adaptation method for video streaming over http/2" - https://www.jstage.jst.go.jp/article/comex/5/3/5_2015XBL0177/_pdf
-
   int           m_duc_buff_low = 8000;
   const double  m_alpha = 0.6;
 
@@ -2782,29 +2781,102 @@ int get_k_ind_adapt_1(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+as in Mengbai et al. paper:
+[3] Evaluating and Improving Push based Video Streaming with HTTP/2
+*/
 int get_k_ind_adapt_2(){
   int temp = 1;
+  if (ind_adapt_2_first_push_cycle){
+    ind_adapt_2_first_push_cycle = false;
+    temp = 1;    
+  }
+  else {
+    double m_thrp_est = evaluation_thrp_est;
+    int m_max_k = (int) hung_cur_buff/(hung_rate_recorder.at(hung_rate_recorder.size()-1)*1.0/m_thrp_est - hung_sd);
+    const double T_1 = 1500; //  Kbps: threshold that SLOWS the increment of k. This value is based on network trace.
+    const double T_2 = 2500; //  Kpbs: threshold that STOP the increment of k
+
+    if (m_thrp_est <= T_1){     // fast rate of increment
+      temp *= 2;
+    }
+    else if (m_thrp_est <= T_2){ // slow rate of increment when bandwidth is high enough
+      temp += 1;
+    }
+    else {                                // stop the increment of k
+      temp = ind_adapt_2_last_k;
+    }
+    
+    // cap k
+    if (temp > m_max_k){
+      temp = m_max_k;
+    }
+
+  }
+  ind_adapt_2_last_k = temp;
 
   return temp;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+as in Nhat Minh et al. paper:
+[6] A probability-based adaption method for server-pushed streaming over HTTP 2.0
+*/
 int get_k_ind_adapt_3(){
   int temp = 1;
+  switch (minh_ABR){
+    case AGG:
+      const int m_d = buff_max /2;  // buffer threshold that the buffer is required to be beyond. ==> depends on ABR
+      break;
+    case SARA: 
+      const int m_d = buff_max /4;
+      break;
+    case BBA: 
+      const int m_d = buff_max /4;
+      break;
+    default:
+      const int m_d = buff_max /2;
+      break;
 
+  }  
+
+  const m_max_k = 4;
+  double m_epsilon_Lcd = (hung_buff_recorder.at(hung_buff_recorder.size()-1) - m_d)*1.0/((1-hung_safety_margin)*hung_sd);
+  double m_epsilon_nguy = 1.0/(1 - hung_safety_margin); // nguy = hung_safety_margin = 0.1
+
+  // calculate CDF of last thrp/avg_request_thrp. computed based on history data and recomputed after every 50 segments.
+
+  // find n
+  for (int i = m_max_k; i >=; i--){
+    m_epsilon_Lcd = m_epsilon_Lcd/i + m_epsilon_nguy;
+    if (p[hung_thrp_recorder.at(hung_thrp_recorder.size()-1)/thrp_future > m_epsilon_Lcd] <= 0.01){
+      temp = i;
+      break;
+    }
+  }
   return temp;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+as in Mengbai Xiao et al. paper:
+[11] DASH2M: Exploring HTTP/2 for Internet Streaming to Mobile Devices
+*/
 int get_k_ind_adapt_4(){
   int temp = 1;
 
   return temp;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
-int get_k_ind_adapt_5(){
-  int temp = 1;
+/*
+as in Jeroen van der Hooft et al. paper:
+[11] An HTTP/2 Push-Based Approach for Low-Latency Live Streaming with Super-Short Segments
+k is based on RTT/SD ==> k is unchanged ==> = fixed method
+*/
+// int get_k_ind_adapt_5(){
+//   int temp = 1;
 
-  return temp;
-}
+//   return temp;
+// }
 ////////////////////////////////////////////////////////////////////////////////////////////////
 double retrans_getAvgBitrate(){
     int sum = 0;

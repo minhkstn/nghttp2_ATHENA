@@ -89,6 +89,7 @@ void nghttp2_session_callbacks_set_on_frame_not_send_callback(
 void nghttp2_session_callbacks_set_on_stream_close_callback(
     nghttp2_session_callbacks *cbs,
     nghttp2_on_stream_close_callback on_stream_close_callback) {
+  std::cout << "Minh invoked nghttp2_session_callbacks_set_on_stream_close_callback" << std::endl;
   cbs->on_stream_close_callback = on_stream_close_callback;
 }
 
