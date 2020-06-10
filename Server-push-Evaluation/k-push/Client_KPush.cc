@@ -3930,7 +3930,7 @@ void print_stats(const HttpClient &client) {
   string result_direction = "/home/minh/Documents/http_result/HTTP2_PushBased_Evaluation/" + minh_get_ABR_name(minh_ABR) + 
                             "/SD_"    + std::to_string(hung_sd) + "ms" + 
                             "/Kpush_" + minh_kpush_string       +
-                            "/Buff_"  + std::to_string(buff_max) + "ms/" +
+                            "/Buff_"  + std::to_string(buff_max) + "ms" +
                             "/RTT_"   + std::to_string(minh_RTT) + "ms/"  +
                             std::string(timeBuff);
   // boost::filesystem::create_directories (result_direction); 
