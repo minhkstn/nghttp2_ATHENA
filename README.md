@@ -184,3 +184,6 @@ void nghttp2_priority_spec_init(nghttp2_priority_spec *pri_spec, int32_t stream_
 	    }
 	}
     /*****************/
+[2020.06.23] Branch H2BR_journal
+	client file:
+	server file:
