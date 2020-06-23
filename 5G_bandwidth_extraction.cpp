@@ -23,13 +23,14 @@ int 	thrpPosition = 12;
 ** separator = ","
 */
 const std::string separator = ",";
-const int 		  startPoint= 10;
+const int 		  startPoint= 500;
 const int 		  tracelength = 500;
 
 // const std::string originTraceFile = "B_2020.02.13_13.57.29_for300s";
 // const std::string originTraceFile = "B_2019.12.16_13.40.04_for2000s";
-// const std::string originTraceFile = "B_2020.01.16_10.43.34";
-const std::string originTraceFile = "B_2020.02.13_13.03.24_driving";
+const std::string originTraceFile = "B_2020.01.16_10.43.34";
+// const std::string originTraceFile = "B_2020.02.13_13.03.24_driving";
+// const std::string originTraceFile = "B_2020.02.13_15.02.01_driving";
 
 struct tm transformTxtToTime(std::string s){
     struct tm tm;
@@ -71,7 +72,7 @@ void parseThroughput(std::string fileDir, std::string separator){
 			std::cout << " FOUND: rtt: " << temp[thrpPosition+3] << std::endl;
 		}
 		int temp_thrp = std::stoi(temp[thrpPosition]);
-		if (temp_thrp > 10 &&
+		if (temp_thrp > 1000 &&
 			temp[thrpPosition+2] == "D" &&
 			temp[thrpPosition-6] == "5G")
 		{
@@ -85,9 +86,9 @@ int main(){
 
 	const std::string outputFileDir = "/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/5g_traces/";
 	const std::string originFileDir = outputFileDir + originTraceFile + ".csv";
-	const std::string resultTxtFileDir = outputFileDir + "origin_" + originTraceFile + '_' + std::to_string(startPoint) + ".txt";
-	const std::string resultTCPDummynetFileDir = outputFileDir + "complex_TCP_" + originTraceFile + '_' + std::to_string(startPoint) + ".sh";
-	const std::string resultUDPDummynetFileDir = outputFileDir + "complex_UDP_" + originTraceFile + '_' + std::to_string(startPoint) + ".sh";
+	const std::string resultTxtFileDir = outputFileDir + originTraceFile + "/origin_" + originTraceFile + '_' + std::to_string(startPoint) + ".txt";
+	const std::string resultTCPDummynetFileDir = outputFileDir + originTraceFile + "/complex_TCP_" + originTraceFile + '_' + std::to_string(startPoint) + ".sh";
+	const std::string resultUDPDummynetFileDir = outputFileDir + originTraceFile + "/complex_UDP_" + originTraceFile + '_' + std::to_string(startPoint) + ".sh";
 	
 
 	parseThroughput(originFileDir, separator);
