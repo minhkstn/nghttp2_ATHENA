@@ -15,7 +15,7 @@ int num;
 int segment_duration = 1000; // 1000ms
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
-const int MAX_SEGMENTS = 596000/segment_duration + 20;
+const int MAX_SEGMENTS = 596000/segment_duration + 1;
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
@@ -68,8 +68,6 @@ void push_remaining_files(const response *res, bool retrans_check) {
     std::cout << '\a' << std::endl;
   }
 
-  // if all required segments were pushed. Note that it must not combined 
-  // with the previous instruction
   if (retrans_check){
     int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;    
     if (retrans_num_decrease == 0 || squad_terminate_check) { // retransmitted completely
@@ -135,15 +133,37 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });
 
     push->write_head(200);
-    // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
-    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
-                              +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-                             "s"+std::to_string(pushing_seg)+".m4s"));      
+    switch(retrans_bitrate){
+      case 1800:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(retrans_bitrate)+"/RaceNight_720x480_segment"
+                              +std::to_string(pushing_seg%12+1)+"_bpp1_30fps_HEVC.bin")); 
+        break;
+      case 5400:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(retrans_bitrate)+"/RaceNight_1280x720_segment"
+                              +std::to_string(pushing_seg%12+1)+"_bpp2_30fps_HEVC.bin")); 
+        break;
+      case 9000:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(retrans_bitrate)+"/RaceNight_1920x1080_segment"
+                              +std::to_string(pushing_seg%12+1)+"_bpp3_30fps_HEVC.bin")); 
+        break;
+      case 18000:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(retrans_bitrate)+"/RaceNight_3840x2160_segment"
+                              +std::to_string(pushing_seg%12+1)+"_bpp4_30fps_HEVC.bin")); 
+        break;
+      default:
+        std::cerr << "[ERROR-RETRANS] This quality is not available: " << retrans_bitrate << std::endl;
+        break;
+    } 
   }
   else{
 
     if (next_num == 0) { return; }
 
+    if (*server_seg > 300){*server_seg = 0;}
     print_new_seg(*server_seg+1, next_bitrate, false);
     next_num--;
 
@@ -175,10 +195,34 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });    
 
     push->write_head(200);
-    // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(next_bitrate)));
-    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
-                              +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-                             "s"+std::to_string(*server_seg+1)+".m4s"));    
+    // push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+    //                           +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
+    //                          "s"+std::to_string(*server_seg+1)+".m4s"));    
+    switch(next_bitrate){
+      case 1800:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(next_bitrate)+"/RaceNight_720x480_segment"
+                              +std::to_string(*server_seg%12+1)+"_bpp1_30fps_HEVC.bin")); 
+        break;
+      case 5400:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(next_bitrate)+"/RaceNight_1280x720_segment"
+                              +std::to_string(*server_seg%12+1)+"_bpp2_30fps_HEVC.bin")); 
+        break;
+      case 9000:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(next_bitrate)+"/RaceNight_1920x1080_segment"
+                              +std::to_string(*server_seg%12+1)+"_bpp3_30fps_HEVC.bin")); 
+        break;
+      case 18000:
+        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                              +std::to_string(next_bitrate)+"/RaceNight_3840x2160_segment"
+                              +std::to_string(*server_seg%12+1)+"_bpp4_30fps_HEVC.bin")); 
+        break;
+      default:
+        std::cerr << "[ERROR-NEXT] This quality is not available: " << next_bitrate << std::endl;
+        break;
+    }      
   }
 
 

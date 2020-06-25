@@ -129,6 +129,13 @@ Voi x86_64
 
 	$ ./nghttp -nsv -w10 --har=minh_p14_w10_rate1500_num1_rate900_num_2.txt -p1 http://172.16.23.1:3002/req_vod/bitrate=1500/num=1 -p4 http://172.16.197.1:3002/req_vod/bitrate=900/num=1
 
+	// SHVC 
+	$ ./nghttp -snv http://172.16.23.1:3002/rebuff/segment=0/bitrate=1/num=1
+
+	// SHEV
+
+	$ ./nghttp -sn http://172.16.23.1:3002/rebuff/bitrate=1/num=1
+
 
 8) Install dummynet at the client
 	Source: http://hiephv.blogspot.com/2012/08/cai-at-dummynet-cho-linux.html
