@@ -47,6 +47,7 @@
 #include <sstream>
 #include <tuple>
 #include <vector>
+#include <time.h>
 
 #include <openssl/err.h>
 
@@ -501,14 +502,27 @@ int submit_request(HttpClient *client, const Headers &headers, Request *req) {
 
 // Hung: commons
 enum ABR {AGGRESSIVE, SARA, BBA};
-enum RETRANSMISSION_METHOD {PROPOSAL, SQUAD};
-
+enum RETRANSMISSION_METHOD {NONE, PROPOSAL, SQUAD};
+enum est_thrp_mode  {LAST_THRP, LOWER_BOUND};
+enum TRACE_MODE     {TRACE_3G, TRACE_4G, TRACE_5G};
+const string ABR_STRING[] {
+  "AGG", "SARA", "BBA"
+};
+const string RETRANS_METHOD_STRING[] = {
+  "NONE", "PROPOSAL", "SQUAD"
+};
+const string TRACE_STRING[] = {
+  "3G", "4G", "5G"
+};
+TRACE_MODE              minh_trace_mode = TRACE_4G;
 int       hung_sd = 1000; //ms
 int       hung_MAX_SEGMENTS = 300000/hung_sd + 1;
 
 RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
 ABR                     minh_ABR = AGGRESSIVE;
-bool                    minh_retrans_extention = true;
+bool                    minh_retrans_extension = true;
+
+bool                    minh_rebuff_sent = false;
 // SARA ABR -S
 const int I = 2*hung_sd; // act as the buffer enough to start playing
 const int B_a = 10*hung_sd;
@@ -554,7 +568,7 @@ int              rebuff_buff_thres_H = 0;
 int              vod_buff_thres_L = 0;
 int              vod_buff_thres_H = 0;
 bool             hung_on_buffering = true;
-// std::vector<int> hung_rate_set = {100, 200, 300, 400, 500, 700, 900, 1200, 1500, 2000, 2500, 3000, 4000, 5000};  //fake video data
+int              minh_cur_seg_id = 0;
 
 // BBB video, SD = 1s
 std::vector<int> hung_rate_set_1s = {47, 92, 135, 182, 226, 270, 353, 425, 538, 621, 808, 1100, 1300, 1700, 2200, 2600, 3300, 3800, 4200, 4700}; // BBB video, SD = 1s
@@ -583,7 +597,7 @@ bool                playout_start = false;
 long                playout_start_time = 0;
 
 
-int                 rebuf_num = -1;
+int                 rebuf_num = 0;
 
 int                 retrans_next_id = 0;
 int                 retrans_rate = 0;
@@ -621,13 +635,18 @@ std::vector<int>    minh_rate_ret_id_recorder;
 std::vector<int>    minh_rebuff_duration_recorder;
 
 std::vector<int>    minh_data_downloaded_recorder; // data of each segment at the firt download time (not after retransmission)
-
+// for stall event
+std::vector<int>    minh_stall_start_time;
+std::vector<int>    minh_stall_end_time;
+// int                 stall_num = 0;
+double              stall_duration = 0;
 
 long                minh_rebuff_start = 0;
 int                 minh_rebuff_duration = 0;
 
 int                 needed_retrans_seg_id = 0; // count segment id from 1
 bool                found_rates = false;
+int                     minh_packet_loss = 0;
 
 nghttp2_data_provider *dang_data_prd;
 int64_t               dang_data_length;
@@ -676,12 +695,10 @@ long                  sub_cummulate_seg_recev_data = 0;
 
 std::vector<double>   minh_pri_proportion_recorder;
 double                minh_cur_thrp;
-const double          minh_smooth_thrp_margin = 0.125;
+const double          minh_smooth_thrp_margin = 0.125;  // as rcommended in M. Sargent, M. Allman, and V. Paxson, “Computing TCP’s Retransmission Timer,” RFC 2988 (2011).
 double                smoothedBW = 0;
 
 bool                  squad_decr_flag = 0;
-enum est_thrp_mode  {LAST_THRP, LOWER_BOUND};
-enum TRACE_MODE     {TRACE_3G, TRACE_4G, TRACE_5G};
 /* 191028 Minh [streaming for retransmission] ADD-E*/
 
 
@@ -689,14 +706,14 @@ enum Adaptation_method { AP, ATL, KPush };
 Adaptation_method    hung_method = KPush;
 int                  hung_cur_rtt = 50;     // ik1 => 220ms
 int                  hung_K = 2;
-int num_of_request=1;
+int                  num_of_request=1;
 
 // Hung: recorders
 std::vector<int>     hung_seg_recorder;
 std::vector<int>     hung_time_recorder;
 std::vector<int>     hung_rate_recorder;  // record the final bitrate
 std::vector<double>  hung_thrp_recorder;
-std::vector<int>     hung_buff_recorder;
+std::vector<int>     hung_buff_recorder;  // in ms
 std::vector<int>     dang_buffer_est;
 std::vector<double>  muy_recorder;
 std::vector<double>  time_download_recorder;
@@ -710,8 +727,27 @@ int switch_down_greater_3 = 0;
 int total_size = 0, total_time = 0;
 int D = 30;
 //hung's method
- 
 
+// string minh_get_ABR_name (ABR m_ABR){
+//   switch(m_ABR){
+//     case AGG:
+//       return "AGG";
+//       break;
+//     case SARA:
+//       return "SARA";
+//       break;
+//     case BBA:
+//       return "BBA";
+//       break;
+//     default:
+//         std::cerr << "[ERR] Minh: no ABR available. Imported ABR: "
+//                   << m_ABR << ". Range of ABR: " << first_ABR << " - " << last_ABR
+//                   << std::endl;
+//         exit(EXIT_FAILURE);
+//       return to_string(m_ABR);
+//       break;
+//   }
+// }
 // Hung: get rate and seg# from the uri
 int hung_get_rate_from_uri (std::string uri) {
   return std::stoi(uri.substr(uri.rfind('_') + 1));
@@ -2138,7 +2174,7 @@ int on_frame_recv_callback2(nghttp2_session *session,
     if (frame->hd.length > 0){
             
       sub_downloaded_data += frame->hd.length;
-      // // std::cout << "~~~~~ downloaded_data " << sub_downloaded_data << std::endl;
+      // std::cout << "~~~~~ the whole response length will be: " << req->response_len << std::endl;
       if (retrans_transmitting){ // neu if retransmitting
         int m_seg_idx = hung_get_seg_from_uri(req->make_reqpath());
         int m_rate = hung_get_rate_from_uri(req->make_reqpath());
@@ -2147,7 +2183,6 @@ int on_frame_recv_callback2(nghttp2_session *session,
         
         long m_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                    get_time() - req->timing.response_start_time).count();
-
 
         if (m_seg_idx < m_buff_length){
           retrans_stream_id = frame->hd.stream_id;
@@ -2183,13 +2218,31 @@ int on_frame_recv_callback2(nghttp2_session *session,
             minh_retrans_trigger = false; 
             
             retrans_transmitting = false;
+            next_num_remaining = 0;
             // retrans_transmitting_period = false;           
             nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
                                       retrans_stream_id, NGHTTP2_CANCEL);            
           }            
         }          
       }
-      
+      // [20.06.25] * Stall timestamp determination * ADD-S
+      if (hung_cur_buff < 2*hung_sd){
+        int inst_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                  get_time() - req->timing.response_start_time).count();
+        int inst_buff = hung_cur_buff - inst_download_time;
+
+        if (inst_buff < 100 && !hung_on_buffering){
+          int now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    get_time() - client->timing.connect_end_time).count();          
+          minh_rebuff_sent = false;
+          hung_on_buffering = true;
+          hung_cur_buff = 0;
+          minh_stall_start_time.push_back(now);
+          rebuf_num ++;
+          std::cout << "\n\t[MINH] INFO: ON RECEIVING REBUFFERING from " << now + inst_buff << "ms rebuf_num: " << rebuf_num << std::endl; 
+        }      
+      }
+      // [20.06.25] * Stall timestamp determination * ADD-S
     }
 /*191113 minh measure throughput while using priority ADD-E*/  
     if (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
@@ -2382,19 +2435,11 @@ int hung_compute_max_adapted_rate (double thrp) {
 
 // Hung: rebufferring phase
 void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
-  rebuf_num ++;
-  // int m_buff_thres_L = hung_tar_buff; // for Aggressive ABR
-  // int m_buff_thres_H = hung_tar_buff; // for Aggressive ABR
-
-  // int m_buff_thres_L = I; // for SARA ABR
-  // int m_buff_thres_H = B_b;  // for SARA ABR
-
-  // int m_buff_thres_L = BBA_r; // for BBA ABR
-  // int m_buff_thres_H = buff_max;  // for BBA ABR  
-
+  // rebuf_num ++;
+  minh_rebuff_sent = true;
   int num_of_segs = rebuff_buff_thres_L/hung_sd;
 
-  if (num_of_segs* hung_sd < rebuff_buff_thres_L)
+  if (num_of_segs*hung_sd < rebuff_buff_thres_L)
       num_of_segs ++;
 
   if (hung_sys_time / hung_sd + num_of_segs > hung_MAX_SEGMENTS) {
@@ -2406,11 +2451,16 @@ void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
   std::string rate_string =  std::to_string(hung_rate_set.at(0));
   std::string num_string = std::to_string(num_of_segs);
 
-  if (client->add_request(hung_uri+"/rebuff/bitrate="+rate_string+"/num="+num_string, 
-                            dang_data_prd, dang_data_length, dang_pri_spec)) {
+  // if (client->add_request(hung_uri+"/rebuff/bitrate="+rate_string+"/num="+num_string, 
+  //                           dang_data_prd, dang_data_length, dang_pri_spec)) {
+  if (client->add_request(hung_uri+"/rebuff/sd="+std::to_string(hung_sd)+
+                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id), 
+                          dang_data_prd, dang_data_length, dang_pri_spec)) {
+    /* request example: ip:port/rebuff/sd=1000/bitrate=1000/num=4/start_seg=10 
+    ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
+    */
     if (submit) {
       if(hung_cur_buff > rebuff_buff_thres_H){
-       //std::this_thread::sleep_for;
         usleep((hung_cur_buff - rebuff_buff_thres_H) * 1000);
       }
       submit_request(client, hung_headers, client->reqvec.back().get());
@@ -2429,16 +2479,7 @@ void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
 // Hung: change the bitrate without refusing the stream
 // Note that we disable adaptation until a new segment is fully received
 void hung_req_vod_rate(HttpClient *client, int new_rate) {
-  int num_of_segs = next_num;
-
-  // int m_buff_thres_L = hung_tar_buff; //I; for Aggressive ABR
-  // int m_buff_thres_H = buff_max; //B_b; for Aggressive ABR
-
-  // int m_buff_thres_L = I; // for SARA ABR
-  // int m_buff_thres_H = B_b;  // for SARA ABR
-
-  // int m_buff_thres_L = BBA_r; // for BBA ABR
-  // int m_buff_thres_H = buff_max;  // for BBA ABR    
+  int num_of_segs = next_num;  
 
   if (hung_client_seg + num_of_segs > hung_MAX_SEGMENTS)
     num_of_segs = hung_MAX_SEGMENTS - hung_client_seg - 1;
@@ -2449,12 +2490,17 @@ void hung_req_vod_rate(HttpClient *client, int new_rate) {
 
   std::string rate_string = std::to_string(new_rate);
   std::string num_string = std::to_string(num_of_segs);
-
-  if (client->add_request(hung_uri+"/req_vod/bitrate="+rate_string+"/num="+num_string, 
-                            dang_data_prd, dang_data_length, dang_pri_spec)) {
+  std::string url = hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
+                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id);
+  std::cout << "url: " << url << std::endl;                          
+  if (client->add_request(url, dang_data_prd, dang_data_length, dang_pri_spec)) {
+    /* request example: ip:port/req_vod/sd=1000/bitrate=1000/num=4/start_seg=10 
+    ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
+    */
+  // if (client->add_request(hung_uri+"/req_vod/bitrate="+rate_string+"/num="+num_string, 
+  //                           dang_data_prd, dang_data_length, dang_pri_spec)) {
     if(hung_cur_buff > vod_buff_thres_H){
       std::cout << "Curr buffer" << hung_cur_buff << " -- WAITING for " << (hung_cur_buff-vod_buff_thres_H) << "ms" << std::endl;
-       //std::this_thread::sleep_for;
         usleep((hung_cur_buff - vod_buff_thres_H) * 1000);
       }
     submit_request(client, hung_headers, client->reqvec.back().get());
@@ -2593,9 +2639,10 @@ void minh_get_ABR_parameters(ABR m_ABR){
       std::cout << "*************** DEFAULT ABR **************" << std::endl;
       break;      
   } 
-  retrans_buff_thres = hung_tar_buff/4;
   retrans_buff_trigger_on = hung_tar_buff/2;
+  retrans_buff_thres = hung_tar_buff/4;
   retrans_buff_cancel = hung_tar_buff/4;    
+  duc_buff_low = hung_tar_buff/2;
 
   squad_buff_high = retrans_buff_trigger_on;
   squad_buff_low = retrans_buff_thres;  
@@ -2679,8 +2726,10 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
 
     // for retransmitted segment
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_retrans_rate, 0);
-    if (client->add_request(hung_uri+"/retrans/bitrate=" + retrans_rate_string+"/num="+std::to_string(m_retrans_num)+"/start_seg_id="+ std::to_string(needed_retrans_seg_id+1), 
-                              dang_data_prd, dang_data_length, dang_pri_spec)) {
+    std::string url_retrans = hung_uri+"/retrans/bitrate=" + retrans_rate_string+"/num="+std::to_string(m_retrans_num)+"/start_seg_id="+ std::to_string(needed_retrans_seg_id+1);
+    std::cout << "RETRANS url: " << url_retrans << std::endl;
+
+    if (client->add_request(url_retrans, dang_data_prd, dang_data_length, dang_pri_spec)) {
         if(submit)
             submit_request(client, dang_headers, client->reqvec.back().get()); 
         num_of_request++;
@@ -2690,13 +2739,19 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
 
     // for next segment                                        
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_new_rate, 0);    // Step 1: set priority
-    if (client->add_request(hung_uri+"/req_vod/bitrate=" + new_rate_string+"/num=" + std::to_string(m_next_num), 
-                            dang_data_prd, dang_data_length, dang_pri_spec)) {
-            submit_request(client, hung_headers, client->reqvec.back().get());
-          num_of_request++;
-          sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                 get_time() - client->timing.connect_end_time).count();    
-        }
+    // if (client->add_request(hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
+    //                         "bitrate=" + new_rate_string+"/num=" + std::to_string(m_next_num), 
+    //                         dang_data_prd, dang_data_length, dang_pri_spec)) {
+    
+    std::string url = hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
+                          "/bitrate="+new_rate_string+"/num="+std::to_string(m_next_num)+"/start_seg="+std::to_string(minh_cur_seg_id);
+    std::cout << "url: " << url << std::endl;                          
+    if (client->add_request(url, dang_data_prd, dang_data_length, dang_pri_spec)){      
+      submit_request(client, hung_headers, client->reqvec.back().get());
+      num_of_request++;
+      sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
+             get_time() - client->timing.connect_end_time).count();    
+    }
 
     std::cout << "\tNEXT seg [" << hung_rate_recorder.size()+1 << "] at rate [" << new_rate_string << "]"// Step 3: print info
             << std::endl << std::endl;   
@@ -2718,43 +2773,6 @@ void compute_Smooth_thrp_est(){
   }
 }
 
-// int compute_next_bitrate(){
-//   int m_next_bitrate = 0;
-//   double m_curr_buff = hung_buff_recorder.at(hung_buff_recorder.size()-1);
-
-//   int curr_rate_idx = getIndexByRate(hung_rate_recorder.at(hung_rate_recorder.size()-1));
-//   if (m_curr_buff >= buff_high){
-//     if (hung_rate_set.at(curr_rate_idx+1) < thrp_est){
-//       m_next_bitrate = hung_rate_set.at(curr_rate_idx+1);
-//     }
-//     else{
-//       m_next_bitrate = hung_rate_set.at(curr_rate_idx);
-//     }
-//   }
-//   else if (m_curr_buff >= buff_low){
-//     m_next_bitrate = hung_rate_set.at(curr_rate_idx);
-//   }
-//   else if (m_curr_buff >= buff_min){
-//     if (time_download_recorder.at(time_download_recorder.size()-1) > hung_sd){
-//       for (int i = curr_rate_idx-1; i >= 0; i--){
-//         if (hung_cur_buff + hung_sd*next_num*(1 - hung_rate_set.at(i)*1.0/thrp_est) > buff_min){
-//           m_next_bitrate = hung_rate_set.at(i);
-//           return m_next_bitrate;
-//         }
-//         else {
-//            m_next_bitrate = hung_rate_set.at(0);
-//         }
-//       }
-//     }
-//     else {
-//       m_next_bitrate = hung_rate_set.at(curr_rate_idx);
-//     }
-//   }
-//   else {
-//     m_next_bitrate = hung_rate_set.at(0);
-//   }
-//   return m_next_bitrate;
-// }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /* SARA ABR -S*/
@@ -2939,6 +2957,18 @@ int BBA_adaptation_method(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+double get_smooth_thrp(){
+  if (hung_rate_recorder.size() == 1){
+    smoothedBW = minh_cur_thrp;
+  }
+  else {
+    smoothedBW = (1 - minh_smooth_thrp_margin)*smoothedBW +
+                 minh_smooth_thrp_margin*hung_thrp_recorder.at(hung_thrp_recorder.size()-1);
+  }
+
+  return smoothedBW;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////
 double get_harmonic_thrp_FESTIVE_ABR(){
   double m_harmonic_thrp = 0;
   double m_sum_thrp = 0;
@@ -3081,7 +3111,7 @@ void retransmission_method(HttpClient *client){
   }
 
 // // Without retransmisison No retrans 
-  if (minh_retrans_extention == false){
+  if (minh_retrans_extension == false){
     minh_retrans_trigger = false;
     std::cout << "*********************** NO RETRANS *************************** " << std::endl;
   }
@@ -3199,32 +3229,6 @@ void retransmission_method(HttpClient *client){
             }
             std::cout << "curr_buff: " << hung_cur_buff << std::endl;
 
-            // double division_next_seg = (hung_cur_buff + next_num*hung_sd - m_retrans_buff_thres);
-            // // double division_retrans_seg = (hung_cur_buff + (j+1)*1000 - rate_recorder_length*1000)*(1 - division_retrans_seg_margin);
-            // double division_retrans_seg = hung_sd;
-            // double t_1 = 0; 
-            // double t_2 = 0;          
-         
-            // if (division_retrans_seg <= 0 || division_next_seg <= 0){
-            //   // std::cout << "division_retrans_seg <= 0 || division_next_seg <= 0" << std::endl;
-            //   continue; // go to the next segment
-            // }
-            // for (int k = getIndexByRate(min_bitrate); k <= getIndexByRate(hung_compute_max_adapted_rate(max_bitrate)); k++){
-            //   // std::cout <<" 1911115 -5- checking rate: " << hung_rate_set.at(k) << std::endl;
-            //   t_1 = new_rate*next_num*1.0/division_next_seg;
-            //   t_2 = hung_rate_set.at(k)/division_retrans_seg; 
-
-            //   double condition = (1.0*thrp_est) - (hung_sd *(t_1 + t_2));
-            //   // if (condition > 0.95){condition = 1;}
-            //   // std::cout << "\t\t condition: " << condition << " rate: " << hung_rate_set.at(k)  << " seg: " << j << std::endl;
-
-            //   if (condition > 0){
-            //     retrans_rate = hung_rate_set.at(k);
-            //     retrans_num = last_seg_idx + 1 - j;
-            //     found_rates = true;
-            //     needed_retrans_seg_id = j;
-            //   }
-            // }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             retrans_num = last_seg_idx + 1 - j; //k_r
             double temp_A = (hung_cur_buff + next_num*hung_sd - m_retrans_buff_thres)/hung_sd;
@@ -3603,7 +3607,6 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
 
  std::cout << "\n****************** CLOSE STREAM ******************" << std::endl;
  std::cout << "* Minh * path\t " << req->make_reqpath() << std::endl;
- // std::cout << "* Minh * retrans " << retrans_transmitting << "\tperiod " << retrans_transmitting_period <<std::endl;
 
   if (req->stream_id % 2 == 0) {
     hung_client_seg = hung_get_seg_from_uri(req->make_reqpath());    
@@ -3678,6 +3681,7 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
       termination_trigger = false;
     }
     else {
+      minh_cur_seg_id ++;
       hung_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(  // to compute buffer after donload each normal segment
                       get_time() - client->timing.connect_end_time).count();
       // to measure buffer
@@ -3693,15 +3697,21 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
       hung_time_recorder.push_back(hung_sys_time);
       time_download_recorder.push_back(seg_download_time_us/1000);
       hung_rate_recorder.push_back(rate);
-      minh_data_downloaded_recorder.push_back(req->response_len) ;//temp_thrp = (double)req->response_len * 8 * 1000 / download_intv_us;
+      minh_data_downloaded_recorder.push_back(req->response_len) ;
       minh_rate_ret_id_recorder.push_back(getIndexByRate(rate)+1);
 
       // compute buffer -S
-      if (hung_on_buffering)
-          hung_cur_buff += hung_sd;
-      else
-          hung_cur_buff = (hung_buff_recorder.at(hung_buff_recorder.size()-1) + hung_sd - (hung_sys_time - hung_last_adapt_time) > 0 ) ? hung_buff_recorder.at(hung_buff_recorder.size()-1) + hung_sd - (hung_sys_time - hung_last_adapt_time) : 0;
-      
+      if (hung_on_buffering){
+          if (minh_rebuff_sent)
+            hung_cur_buff += hung_sd;
+          else
+            hung_cur_buff = 0;
+      }
+      else{
+          hung_cur_buff = (hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time)) > 0 ?
+                          hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time) : 
+                          0;
+      }
       hung_buff_recorder.push_back(hung_cur_buff);
       hung_last_adapt_time = hung_sys_time; 
       // compute buffer -E      
@@ -3715,11 +3725,14 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
         next_num_remaining--;
         double temp_thrp = 0;
 
+        std::cout << "[INFO] next_num_remaining: " << next_num_remaining << std::endl;
+
         hung_thrp_recorder.push_back(hung_inst_thrp);
         minh_cur_thrp = hung_inst_thrp;
 
-        if (next_num_remaining == 0){
+        if (next_num_remaining <= 0){
           retrans_transmitting_period = false;
+          std::cout << "[INFO] RETRANS DONE!!!" << std::endl;
         }
       } 
       else if (!retrans_transmitting && retrans_transmitting_period){ // NEU da download all retransmitted segments and this next segment is the last one
@@ -3757,11 +3770,12 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     std::cout << "-------------------------------------------------------------------------------------------------------------------------" << std::endl;       
 /* 191103 Minh [Kpush with retransmission] ADD-E*/        
   } else {
+    std::cout << "type of path: " << minh_get_type_from_uri_2(req->make_reqpath()) << std::endl;
     if ( (hung_client_seg < hung_MAX_SEGMENTS) &&
          (minh_get_type_from_uri_2(req->make_reqpath()) == "rebuff" ||
             (retrans_transmitting == false && minh_get_type_from_uri_2(req->make_reqpath()) == "req_vod") || 
             (retrans_transmitting_period == false && minh_get_type_from_uri_2(req->make_reqpath()) == "retrans"))) {
-      
+      std::cout << "[INFO] New pusing cycle " << std::endl;
       if (minh_retransmission_method == PROPOSAL){
         retransmission_method(client);
       }
@@ -3791,8 +3805,43 @@ struct RequestResult {
 namespace {
 void print_stats(const HttpClient &client) {
   std::cout << "***** Statistics *****" << std::endl;
-  int a = system("sudo killall bash ./complex_4g.sh");
-  int b = system("sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/complex_4g.sh /home/minh/Documents/http_result/H2BR_HEVC/");
+
+// [20.06.25] * Create result dir automatically * ADD-S
+  time_t  rawTime;
+  struct tm* timeInfo;
+  char timeBuff[20];
+
+  time (&rawTime);
+  timeInfo = localtime(&rawTime);
+  strftime(timeBuff, 20, "%F_%H%M%S", timeInfo);
+
+  // kill dummynet
+  const string dummynet_file = "complex_" + TRACE_STRING[minh_trace_mode] + "_"
+                                + "PL_" + std::to_string(minh_packet_loss) + ".sh";
+  std::cout << "Dummynet file: " << dummynet_file << std::endl;                                               
+  const string dummynet_kill = "sudo killall bash ./" + dummynet_file;
+  std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_kill << std::endl;
+  if (system(dummynet_kill.c_str())) {std::cout << "Could not Kill DummyNet" << std::endl; }
+
+  // create a direction
+  const string result_direction = "/home/minh/Documents/http_result/H2BR_HEVC/NETWORK_"  + 
+                                  TRACE_STRING[minh_trace_mode]                 +
+                                  "/PL_"      + std::to_string(minh_packet_loss)+
+                                  "/SD_"      + std::to_string(hung_sd) + "ms"  + 
+                                  "/ABR_"     + ABR_STRING[minh_ABR]            + 
+                                  "/RETRANS_" + RETRANS_METHOD_STRING[minh_retransmission_method] +
+                                  "/"         + std::string(timeBuff);
+  const string create_directories = "mkdir -p " + result_direction;                           
+  int a_1 = system(create_directories.c_str()); 
+
+  // string temp1 = "complex_rtt_";
+  // string temp2 = ".sh ";
+  string cp_files = "sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/"
+                    + dummynet_file + " " + result_direction;     
+  std::cout << "cp_files: " << cp_files << std::endl; 
+
+  int b = system(cp_files.c_str());
+// [20.06.25] * Create result dir automatically * ADD-E
 
   std::vector<Request *> reqs;
   reqs.reserve(client.reqvec.size());
@@ -3869,10 +3918,10 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   // // Hung: Doan nay tinh thoi gian, sau do in ra (sua roi nhe)
   ofstream MyExcelFile, log, parameters;
 /* 191103 Minh [Kpush with retransmission] DEL-S*/
-  string name = "/home/minh/Documents/http_result/H2BR_HEVC/H2BR_HEVC";
-  MyExcelFile.open(name + "_detail.ods");
+  // string name = "/home/minh/Documents/http_result/H2BR_HEVC/H2BR_HEVC";
+  MyExcelFile.open(result_direction + "/statistic.ods");
   MyExcelFile << "Time\tThrp\tRe_Bitrate\tBitrate\tBuffer\tRetrans\tDownloadTime\tRe_id\tOl_id\tDataDownloaded" << endl;  
-  std::cout << std::endl << "Our statistics: " << std::endl;
+  std::cout << std::endl << "The statistics: " << std::endl;
   std::cout << "Index \tTime \tThrp \tRate \tM_Rate \tBuffer \tRetrans \tRe_id \tol_id" << std::endl;
   for (int i = 0; i < hung_time_recorder.size(); i++) {
     int temp_bitrate_diff = hung_rate_recorder.at(i) - minh_rate_recorder.at(i);
@@ -3909,7 +3958,7 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
 
   MyExcelFile.close();
 
-  log.open(name + "_retrans_buffer_recorder.txt"); 
+  log.open(result_direction + "/retrans_buffer_recorder.txt"); 
   log << "Seg_id\tAvai_time" << endl;
   for (int n = 0; n < retrans_buffer_recorder.size(); n++){
     log << retrans_retransmitted_seg_recorder.at(n) +1 << '\t'
@@ -3949,14 +3998,21 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   avg_ret_idx     = avg_ret_idx*1.0/hung_rate_recorder.size();
   avg_old_idx     = avg_old_idx*1.0/hung_rate_recorder.size();
 
-  parameters.open(name + "_parameters.txt");
+  parameters.open(result_direction + "/parameters.txt");
   parameters << "- hung_rate_set = {";
   for (int a = 0; a < hung_rate_set.size(); a ++){
     parameters << hung_rate_set.at(a) << ", ";
   }
-  parameters << "};" << '\n';
-  parameters << "- hung_sd = " << hung_sd << "\n\n"
-             << "- hung_tar_buff = " << hung_tar_buff << '\n'
+  parameters  << "};" << '\n'
+              << "[CONFIG] Segment duration: " << hung_sd << "\n"
+              << "[CONFIG] Num of segments: " << hung_MAX_SEGMENTS << "\n" 
+              << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
+              << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
+              << "[CONFIG] ABR {AGGRESSIVE, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
+              << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_retrans_extension]  << "\n"
+              << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
+
+              << "- hung_tar_buff = " << hung_tar_buff << '\n'
              << "- retrans_buff_thres = " << retrans_buff_thres << '\n'
              << "- retrans_buff_trigger_on "<< retrans_buff_trigger_on << '\n'
              << "- retrans_buff_cancel "    << retrans_buff_cancel << '\n'
@@ -4010,7 +4066,7 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
  
   std::cout << "============================= THE END =====================" << '\n';
 
-  if (minh_retrans_extention == true){
+  if (minh_retrans_extension == true){
     std::cout << "Retransmission extention: YES" << std::endl;
     if (minh_retransmission_method == PROPOSAL){
       std::cout << "Retransmission method: PROPOSAL" << std::endl;
@@ -4169,7 +4225,8 @@ int communicate(
         // if (minh_network_ack == YES){
         //   minh_get_origin_thrp();
         // }
-        hung_req_vod_rebuff(&client, false); // 20.06.24 ? why false?
+        minh_stall_start_time.push_back(0);
+        hung_req_vod_rebuff(&client, false);
         break;
       }
     }
@@ -4565,6 +4622,24 @@ Options:
   -r, --har=<PATH>
               Output HTTP  transactions <PATH> in HAR  format.  If '-'
               is given, data is written to stdout.
+
+  // [20.06.25] * Add more option in command lines * ADD-S
+  -R, --retrans-method=<M>
+              Determine which retransmission method is used. Default:
+              H2BR.
+  -A, --abr=<M>
+              Determine which ABR is used. Default: AGGRESSIVE
+  --enable-retrans
+              To enable retransmission extention. Default: false.
+  -N, --network-mode=<N>
+              Determine the type of network to run experiments.
+              Default: TRACE_4G
+  -S, --segment-duration=<N>
+              Determine the segment duration used: 1000ms, 2000ms,...
+  -P, --packet-loss=<N>
+              Determine the packet loss of the network trace.
+  // [20.06.25] * Add more option in command lines * ADD-E    
+
   --color     Force colored log output.
   --continuation
               Send large header to test CONTINUATION.
@@ -4624,6 +4699,13 @@ int main(int argc, char **argv) {
         {"header-table-size", required_argument, nullptr, 'c'},
         {"padding", required_argument, nullptr, 'b'},
         {"har", required_argument, nullptr, 'r'},
+        // [20.06.25] * Add more option in command lines * ADD-S
+        {"retrans-method", required_argument, nullptr, 'R'},
+        {"abr", required_argument, nullptr, 'A'},
+        {"network-mode", required_argument, nullptr, 'N'},
+        {"packet-loss", required_argument, nullptr, 'P'},
+        {"segment-duration", required_argument, nullptr, 'S'},
+        // [20.06.25] * Add more option in command lines * ADD-E
         {"cert", required_argument, &flag, 1},
         {"key", required_argument, &flag, 2},
         {"color", no_argument, &flag, 3},
@@ -4637,6 +4719,9 @@ int main(int argc, char **argv) {
         {"max-concurrent-streams", required_argument, &flag, 12},
         {"expect-continue", no_argument, &flag, 13},
         {"encoder-header-table-size", required_argument, &flag, 14},
+        // // [20.06.25] * Add more option in command lines * ADD-S
+        // {"enable-retrans", no_argument, &flag, 15},
+        // // [20.06.25] * Add more option in command lines * ADD-E
         {nullptr, 0, nullptr, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "M:Oab:c:d:gm:np:r:hH:vst:uw:W:",
@@ -4770,102 +4855,208 @@ int main(int argc, char **argv) {
       config.min_header_table_size = std::min(config.min_header_table_size, n);
       break;
     }
+    // [20.06.25] * Add more option in command lines * ADD-S
+    case 'R':
+    {
+      if (strcmp(optarg, "NONE") == 0)
+      {
+        minh_retrans_extension = false;
+        minh_retransmission_method = NONE;
+      }
+      else if (strcmp(optarg, "PROPOSAL") == 0)
+      {
+        minh_retrans_extension = true;
+        minh_retransmission_method = PROPOSAL;
+      }
+      else if (strcmp(optarg, "SQUAD") == 0)
+      {
+        minh_retrans_extension = true;
+        minh_retransmission_method = SQUAD;
+      }
+      else
+      {
+        std::cerr << "[ERROR] This [" << optarg << "] retransmisison method is NOT supported. Methods supported are: \n";
+        for (int i = 0; i < sizeof(RETRANS_METHOD_STRING); i++){
+          std::cerr << RETRANS_METHOD_STRING[i] << '\n';
+        }
+        exit(EXIT_FAILURE);
+      }
+      break;
+    }
+    case 'A':
+    {
+      if (strcmp(optarg, "AGGRESSIVE") == 0)
+      {
+        minh_ABR = AGGRESSIVE;
+      }
+      else if (strcmp(optarg, "SARA") == 0)
+      {
+        minh_ABR = SARA;
+      }
+      else if (strcmp(optarg, "BBA") == 0)
+      {
+        minh_ABR = BBA;
+      }
+      else {
+        std::cerr << "[ERROR] This ABR [" << optarg <<"] is NOT supported. ABRs supported are: \n";
+        for (int i = 0; i < sizeof(ABR_STRING); i++){
+          std::cerr << ABR_STRING[i] << '\n';
+        }
+        exit(EXIT_FAILURE);        
+      }
+      break;
+    }
+    case 'N':
+    {
+      if (strcmp(optarg, "3G") == 0){
+        minh_trace_mode = TRACE_3G;
+      }
+      else if (strcmp(optarg, "4G") == 0){
+        minh_trace_mode = TRACE_4G;
+      }
+      else if (strcmp(optarg, "5G") == 0){
+        minh_trace_mode = TRACE_5G;
+      }
+      else {
+        std::cerr << "This Network trace [" << optarg <<"] is NOT supported. Network traces supported are: \n";
+        for (int i = 0; i < sizeof(TRACE_STRING); i++){
+          std::cerr << TRACE_STRING[i] << '\n';
+        }
+        exit(EXIT_FAILURE);        
+      }
+      break;
+    }
+    case 'P':
+    {
+      minh_packet_loss = std::stoi(optarg);
+      break;
+    }
+    case 'S':
+    {
+      hung_sd = std::stoi(optarg);
+      hung_MAX_SEGMENTS = 300/hung_sd;
+      break;
+    }
+    // [20.06.25] * Add more option in command lines * ADD-E
     case '?':
       util::show_candidates(argv[optind - 1], long_options);
       exit(EXIT_FAILURE);
     case 0:
       switch (flag) {
-      case 1:
-        // cert option
-        config.certfile = optarg;
-        break;
-      case 2:
-        // key option
-        config.keyfile = optarg;
-        break;
-      case 3:
-        // color option
-        color = true;
-        break;
-      case 4:
-        // continuation option
-        config.continuation = true;
-        break;
-      case 5:
-        // version option
-        print_version(std::cout);
-        exit(EXIT_SUCCESS);
-      case 6:
-        // no-content-length option
-        config.no_content_length = true;
-        break;
-      case 7:
-        // no-dep option
-        config.no_dep = true;
-        break;
-      case 9: {
-        // trailer option
-        auto header = optarg;
-        auto value = strchr(optarg, ':');
-        if (!value) {
-          std::cerr << "--trailer: invalid header: " << optarg << std::endl;
-          exit(EXIT_FAILURE);
-        }
-        *value = 0;
-        value++;
-        while (isspace(*value)) {
+        case 1:
+          // cert option
+          config.certfile = optarg;
+          break;
+        case 2:
+          // key option
+          config.keyfile = optarg;
+          break;
+        case 3:
+          // color option
+          color = true;
+          break;
+        case 4:
+          // continuation option
+          config.continuation = true;
+          break;
+        case 5:
+          // version option
+          print_version(std::cout);
+          exit(EXIT_SUCCESS);
+        case 6:
+          // no-content-length option
+          config.no_content_length = true;
+          break;
+        case 7:
+          // no-dep option
+          config.no_dep = true;
+          break;
+        case 9: {
+          // trailer option
+          auto header = optarg;
+          auto value = strchr(optarg, ':');
+          if (!value) {
+            std::cerr << "--trailer: invalid header: " << optarg << std::endl;
+            exit(EXIT_FAILURE);
+          }
+          *value = 0;
           value++;
+          while (isspace(*value)) {
+            value++;
+          }
+          if (*value == 0) {
+            // This could also be a valid case for suppressing a header
+            // similar to curl
+            std::cerr << "--trailer: invalid header - value missing: " << optarg
+                      << std::endl;
+            exit(EXIT_FAILURE);
+          }
+          config.trailer.emplace_back(header, value, false);
+          util::inp_strlower(config.trailer.back().name);
+          break;
         }
-        if (*value == 0) {
-          // This could also be a valid case for suppressing a header
-          // similar to curl
-          std::cerr << "--trailer: invalid header - value missing: " << optarg
-                    << std::endl;
-          exit(EXIT_FAILURE);
+        case 10:
+          // hexdump option
+          config.hexdump = true;
+          break;
+        case 11:
+          // no-push option
+          config.no_push = true;
+          break;
+        case 12:
+          // max-concurrent-streams option
+          config.max_concurrent_streams = strtoul(optarg, nullptr, 10);
+          break;
+        case 13:
+          // expect-continue option
+          config.expect_continue = true;
+          break;
+        case 14: {
+          // encoder-header-table-size option
+          auto n = util::parse_uint_with_unit(optarg);
+          if (n == -1) {
+            std::cerr << "--encoder-header-table-size: Bad option value: "
+                      << optarg << std::endl;
+            exit(EXIT_FAILURE);
+          }
+          if (n > std::numeric_limits<uint32_t>::max()) {
+            std::cerr << "--encoder-header-table-size: Value too large.  It "
+                         "should be less than or equal to "
+                      << std::numeric_limits<uint32_t>::max() << std::endl;
+            exit(EXIT_FAILURE);
+          }
+          config.encoder_header_table_size = n;
+          break;
         }
-        config.trailer.emplace_back(header, value, false);
-        util::inp_strlower(config.trailer.back().name);
-        break;
-      }
-      case 10:
-        // hexdump option
-        config.hexdump = true;
-        break;
-      case 11:
-        // no-push option
-        config.no_push = true;
-        break;
-      case 12:
-        // max-concurrent-streams option
-        config.max_concurrent_streams = strtoul(optarg, nullptr, 10);
-        break;
-      case 13:
-        // expect-continue option
-        config.expect_continue = true;
-        break;
-      case 14: {
-        // encoder-header-table-size option
-        auto n = util::parse_uint_with_unit(optarg);
-        if (n == -1) {
-          std::cerr << "--encoder-header-table-size: Bad option value: "
-                    << optarg << std::endl;
-          exit(EXIT_FAILURE);
-        }
-        if (n > std::numeric_limits<uint32_t>::max()) {
-          std::cerr << "--encoder-header-table-size: Value too large.  It "
-                       "should be less than or equal to "
-                    << std::numeric_limits<uint32_t>::max() << std::endl;
-          exit(EXIT_FAILURE);
-        }
-        config.encoder_header_table_size = n;
-        break;
-      }
+        // // [20.06.25] * Add more option in command lines * ADD-S
+        // case 15:
+        // {
+        //   minh_retrans_extension = true;
+        //   break;
+        // }
+        // // [20.06.25] * Add more option in command lines * ADD-E
       }
       break;
     default:
       break;
     }
   }
+
+  // [20.06.25] * Add more option in command lines * ADD-S
+  std::cout << "[CONFIG] Segment duration: " << hung_sd << "\n"
+            << "[CONFIG] Num of segments: " << hung_MAX_SEGMENTS << "\n" 
+            << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
+            << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
+            << "[CONFIG] ABR {AGGRESSIVE, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
+            << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
+            << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n"
+            << std::endl;
+
+  const string dummynet_run = "sudo ./complex_" + TRACE_STRING[minh_trace_mode] + "_"
+                                                + "PL_" + std::to_string(minh_packet_loss) + ".sh &";
+  std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
+        if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }              
+  // [20.06.25] * Add more option in command lines * ADD-E
 
   int32_t weight_to_fill;
   if (config.weight.empty()) {
@@ -4896,8 +5087,10 @@ int main(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   // Hung:
-  //if (system("./start.sh &")) {std::cout << "could not run DummyNet" << std::endl; } 
-  if (system("sudo ./complex_4g.sh &")) {std::cout << "could not run DummyNet" << std::endl; }
+        // const string dummynet_run = "sudo ./complex_" + TRACE_STRING[minh_trace_mode] + "_"
+        //                                               + "PL_" + std::to_string(minh_packet_loss) + ".sh &";
+        // std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
+        // if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }
 
   return nghttp2::run_app(nghttp2::main, argc, argv);
 }

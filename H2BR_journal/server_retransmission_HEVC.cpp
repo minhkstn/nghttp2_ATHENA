@@ -28,7 +28,9 @@ int           retrans_num = 0;
 int           retrans_num_decrease = 0;
 int           next_bitrate = 0;
 int           next_num = 0;
+int           req_seg_id = 0;
 int           minh_server_seg = 0; // useless
+int pushing_seg = 0;
 
 bool          squad_terminate_check = false;
 /* 191030 Minh [live streaming for retransmission] ADD-E*/
@@ -51,25 +53,57 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
     std::cout << std::endl << "RETRANS seg #" << seg_id << " bitrate " << bitrate;
     std::cout << " at time: " << get_time() << "ms" << std::endl;    
   } else{
-     std::cout << std::endl << "Respond seg #" << seg_id << " bitrate " << bitrate;
+    std::cout << std::endl << "Respond seg #" << seg_id << " bitrate " << bitrate << " SD " << segment_duration;
     std::cout << " at time: " << get_time() << "ms" << std::endl;   
   }
 }
 
-void push_remaining_files(const response *res, bool retrans_check) {
-  if (*server_seg + 1 >= MAX_SEGMENTS) {
-    std::cout << "********************* DONE ******************" << std::endl;
-    res->write_head(200);
-    res->end();          
-    return;
+std::string getFilePath(int m_bitrate, int m_seg_id){
+  std::string m_file_path;
+  switch(m_bitrate){
+    case 1800:
+      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                            +std::to_string(m_bitrate)+"/RaceNight_720x480_segment"
+                            +std::to_string((m_seg_id-1)%12+1)+"_bpp1_30fps_HEVC.bin";
+      break;
+    case 5400:
+      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                            +std::to_string(m_bitrate)+"/RaceNight_1280x720_segment"
+                            +std::to_string((m_seg_id-1)%12+1)+"_bpp2_30fps_HEVC.bin";
+      break;
+    case 9000:
+      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                            +std::to_string(m_bitrate)+"/RaceNight_1920x1080_segment"
+                            +std::to_string((m_seg_id-1)%12+1)+"_bpp3_30fps_HEVC.bin";
+      break;
+    case 18000:
+      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                            +std::to_string(m_bitrate)+"/RaceNight_3840x2160_segment"
+                            +std::to_string((m_seg_id-1)%12+1)+"_bpp4_30fps_HEVC.bin";
+      break;
+    default:
+      std::cerr << "[ERROR] This quality is not available: " << m_bitrate << std::endl;
+      break;
   } 
 
-  if (*server_seg > MAX_SEGMENTS - 30){
-    std::cout << '\a' << std::endl;
-  }
+  return m_file_path;
+}
+
+void push_remaining_files(const response *res, bool retrans_check) {
+  // if (*server_seg + 1 >= MAX_SEGMENTS) {
+  //   std::cout << "********************* DONE ******************" << std::endl;
+  //   res->write_head(200);
+  //   res->end();          
+  //   return;
+  // } 
+
+  // if (*server_seg > MAX_SEGMENTS - 10){
+  //   std::cout << '\a' << std::endl;
+  // }
 
   if (retrans_check){
-    int pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;    
+    pushing_seg = retrans_seg_id + retrans_num - retrans_num_decrease;    
+
     if (retrans_num_decrease == 0 || squad_terminate_check) { // retransmitted completely
         
         if (squad_terminate_check){
@@ -88,21 +122,21 @@ void push_remaining_files(const response *res, bool retrans_check) {
     std::cout << "[Minh] Prepare to REsend seg " << pushing_seg << std::endl;
     print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
     retrans_num_decrease--; 
-    // std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
+    std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
     boost::system::error_code ec;
-    // std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~boost::system::error_code: " << ec << std::endl;
     auto push = res->push(ec, "GET", "/RETRANS_"+std::to_string(pushing_seg)+"_rate_"+std::to_string(retrans_bitrate)); 
 
     push->on_close([res](uint32_t error_code) { // khi push xong segment cho client
       if (!error_code){
-        std::cout << "RETRANSMITTED seg #" << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << " bitrate " << retrans_bitrate 
+        std::cout << "RETRANSMITTED seg #" << pushing_seg << " bitrate " << retrans_bitrate 
                           << " at time: " << get_time() << "ms" << std::endl << std:: endl; 
       } 
       else if (error_code == NGHTTP2_CANCEL){ // received the RST_STREAM from the client
-        std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINATED seg # " << retrans_seg_id + retrans_num - retrans_num_decrease - 1 << std::endl;
-/*Minh Terminate only ONE retransmitted segment MOD-S*/
-#if 0        
-/*Minh Terminate all next retransmitted segment ADD-S*/
+        std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINATED seg # " << pushing_seg << std::endl;
+        // [200628] Fix segmentation fault when received RST_STREAM frame MOD-S
+        /*Minh Terminate only ONE retransmitted segment MOD-S*/
+        #if 1 //0        
+        /*Minh Terminate all next retransmitted segment ADD-S*/
         retrans_seg_id  = 0;
         retrans_num     = 0;
         retrans_bitrate = 0;
@@ -111,18 +145,21 @@ void push_remaining_files(const response *res, bool retrans_check) {
         res->write_head(200);
         res->end();    
         return; 
-/*Minh Terminate all next retransmitted segment ADD-E*/
-#else
-       push_remaining_files(res, true); 
-#endif
-/*Minh Terminate only ONE retransmitted segment MOD-E*/        
+
+        /*Minh Terminate all next retransmitted segment ADD-E*/
+        #else
+        push_remaining_files(res, true); 
+        #endif
+        /*Minh Terminate only ONE retransmitted segment MOD-E*/
+        // [200628] Fix segmentation fault when received RST_STREAM frame MOD-E        
       }
 
-      if (retrans_num_decrease == 0){  // check xem day co phai segmet cuoi cung k, 
+      if (retrans_num_decrease == 0){  // is this segment the last one in a retransmission cycle?, 
         retrans_seg_id  = 0;
         retrans_num     = 0;
         retrans_bitrate = 0;        
         on_pushing_in_periodic_mode = false;
+        std::cout << "[NOTI] ALl segments in this retransmission cycle have been retransmitted" << std::endl;
         res->write_head(200);
         res->end();
       } 
@@ -133,42 +170,21 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });
 
     push->write_head(200);
-    switch(retrans_bitrate){
-      case 1800:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(retrans_bitrate)+"/RaceNight_720x480_segment"
-                              +std::to_string(pushing_seg%12+1)+"_bpp1_30fps_HEVC.bin")); 
-        break;
-      case 5400:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(retrans_bitrate)+"/RaceNight_1280x720_segment"
-                              +std::to_string(pushing_seg%12+1)+"_bpp2_30fps_HEVC.bin")); 
-        break;
-      case 9000:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(retrans_bitrate)+"/RaceNight_1920x1080_segment"
-                              +std::to_string(pushing_seg%12+1)+"_bpp3_30fps_HEVC.bin")); 
-        break;
-      case 18000:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(retrans_bitrate)+"/RaceNight_3840x2160_segment"
-                              +std::to_string(pushing_seg%12+1)+"_bpp4_30fps_HEVC.bin")); 
-        break;
-      default:
-        std::cerr << "[ERROR-RETRANS] This quality is not available: " << retrans_bitrate << std::endl;
-        break;
-    } 
+    std::string m_file_path = getFilePath(retrans_bitrate, pushing_seg);
+    std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+
+    push->end(file_generator(m_file_path));
   }
   else{
 
     if (next_num == 0) { return; }
 
-    if (*server_seg > 300){*server_seg = 0;}
-    print_new_seg(*server_seg+1, next_bitrate, false);
+    // if (*server_seg > 300){*server_seg = 0;}
+    print_new_seg(++req_seg_id, next_bitrate, false);
     next_num--;
 
     boost::system::error_code ec;
-    auto push = res->push(ec, "GET", "/seg_"+std::to_string(*server_seg+1)+"_rate_"+std::to_string(next_bitrate));
+    auto push = res->push(ec, "GET", "/seg_"+std::to_string(req_seg_id)+"_rate_"+std::to_string(next_bitrate));
 
     push->on_close([res](uint32_t error_code) {
       // std::cout << "======================== pushing next segment. error_code: " << error_code << std::endl;
@@ -177,9 +193,8 @@ void push_remaining_files(const response *res, bool retrans_check) {
       //   std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
       //                     << " at time: " << get_time() << "ms" << std::endl;
       // }
-      *server_seg = *server_seg + 1;
-      std::cout << "Sent seg #" << *server_seg << " bitrate " << next_bitrate 
-                        << " at time: " << get_time() << "ms" << std::endl;
+      std::cout << "Sent seg #" << req_seg_id << " bitrate " << next_bitrate 
+                                << " at time: " << get_time() << "ms" << std::endl;
 
       if (next_num == 0) {
         on_pushing_in_periodic_mode = false;
@@ -195,41 +210,18 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });    
 
     push->write_head(200);
-    // push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
-    //                           +std::to_string(next_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-    //                          "s"+std::to_string(*server_seg+1)+".m4s"));    
-    switch(next_bitrate){
-      case 1800:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(next_bitrate)+"/RaceNight_720x480_segment"
-                              +std::to_string(*server_seg%12+1)+"_bpp1_30fps_HEVC.bin")); 
-        break;
-      case 5400:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(next_bitrate)+"/RaceNight_1280x720_segment"
-                              +std::to_string(*server_seg%12+1)+"_bpp2_30fps_HEVC.bin")); 
-        break;
-      case 9000:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(next_bitrate)+"/RaceNight_1920x1080_segment"
-                              +std::to_string(*server_seg%12+1)+"_bpp3_30fps_HEVC.bin")); 
-        break;
-      case 18000:
-        push->end(file_generator("/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                              +std::to_string(next_bitrate)+"/RaceNight_3840x2160_segment"
-                              +std::to_string(*server_seg%12+1)+"_bpp4_30fps_HEVC.bin")); 
-        break;
-      default:
-        std::cerr << "[ERROR-NEXT] This quality is not available: " << next_bitrate << std::endl;
-        break;
-    }      
+
+    std::string m_file_path = getFilePath(next_bitrate, req_seg_id);
+    std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+
+    push->end(file_generator(m_file_path));          
   }
 
 
   on_pushing_in_periodic_mode = true;
 }
 
-void push_file(                                 ////////////////////////////////////////////////////////////// continue here to fix SEGMENTATION FAULT 
+void push_file(
     std::shared_ptr<boost::asio::basic_deadline_timer<ptime>> timer, 
     const response *res, std::shared_ptr<bool> closed, boost::system::error_code &ec, bool retrans_check) {
   if (ec || *closed) {
@@ -281,23 +273,35 @@ int main(int argc, char *argv[]) {
 
     // *server_seg = get_time() / segment_duration;
 
-    // get url, e.g. http://127.0.0.1:3002/rebuff/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
-    // currently, the special symbol & is not allowed in the url
+    /* request example: ip:port/req_vod/sd=1000/bitrate=1000/num=4/start_seg=10 
+    ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
+    */
+    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 4) {
+    if (strs.size() != 6) {
       std::cout << "[ERROR] : url is incorrect" << std::endl;
+      std::cout << "[ERROR] : url: " << req.uri().path << std::endl;
       return;
     }
 
     std::vector<std::string> temp;
     for (int i = 2; i < strs.size(); i++) {
-      boost::split(temp, strs[i], boost::is_any_of("="));      
-      if (temp[0] == "bitrate")
+      boost::split(temp, strs[i], boost::is_any_of("="));    
+      if (temp[0] == "sd")
+        segment_duration = std::stoi(temp[1]);
+      else if (temp[0] == "bitrate")
         next_bitrate = std::stoi(temp[1]);
-      else
-        next_num = std::stoi(temp[1]);
+      else if (temp[0] == "num")
+        next_num = std::stoi(temp[1]); 
+      else if (temp[0] == "start_seg"){
+        req_seg_id = std::stoi(temp[1]); // push <nex_num> segments from segment <req_seg_id+1>th
+        if (req_seg_id == 0){
+          start_time = microsec_clock::local_time();  // count clock again after every session
+        }
+      }
     }
+
     // compute the available time instant of the next segment
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
 
@@ -319,24 +323,37 @@ int main(int argc, char *argv[]) {
     timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
   });
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   server.handle("/req_vod/", [](const request &req, const response &res) {
     // get url, e.g. http://127.0.0.1:3002/req_vod/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
     // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
-    if (strs.size() != 4) {
+    if (strs.size() != 6) {
       std::cout << "[ERROR] : url is incorrect req_vod " << strs.size() <<  std::endl;
       return;
     }
 
     std::vector<std::string> temp;
     for (int i = 2; i < strs.size(); i++) {
-      boost::split(temp, strs[i], boost::is_any_of("="));      
-      if (temp[0] == "bitrate")
+      boost::split(temp, strs[i], boost::is_any_of("="));    
+      if (temp[0] == "sd"){
+        segment_duration = std::stoi(temp[1]);
+        std::cout << "\tVOD sd = " << segment_duration << std:: endl;
+      }
+      else if (temp[0] == "bitrate"){
         next_bitrate = std::stoi(temp[1]);
-      else
+        std::cout << "\tVOD bitrate = " << next_bitrate << std:: endl;
+      }
+      else if (temp[0] == "num"){
         next_num = std::stoi(temp[1]);
+        std::cout << "\tVOD num = " << next_num << std:: endl; 
+      }
+      else if (temp[0] == "start_seg"){
+        req_seg_id = std::stoi(temp[1]); 
+        std::cout << "\tVOD start_seg = " << req_seg_id << std:: endl;
+      }
     }
 
     // compute the available time instant of the next segment
@@ -355,8 +372,8 @@ int main(int argc, char *argv[]) {
       timer->cancel();
       *closed = true;
     });
-    // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " BEFORE push_file " << *server_seg << std::endl;
-    //timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
+    std::cout << "\nREQ_VOD req.uri().path " << req.uri().path << std::endl;
+    // timer->async_wait(boost::bind(push_file, timer, &res, closed, ec, false));
     push_file(timer,&res,closed,ec, false);
   });
 
@@ -379,14 +396,14 @@ int main(int argc, char *argv[]) {
 
       if (temp[0] == "bitrate"){
         retrans_bitrate = std::stoi(temp[1]);
-        //std::cout << "\tRETRANS RETRANS bitrate = " << retrans_bitrate << std:: endl;
+        std::cout << "\tRETRANS RETRANS bitrate = " << retrans_bitrate << std:: endl;
       } else if (temp[0] == "num"){
         retrans_num = std::stoi(temp[1]);
         retrans_num_decrease = retrans_num;
-        //std::cout << "\tRETRANS RETRANS num = " << retrans_num << std:: endl;
+        std::cout << "\tRETRANS RETRANS num = " << retrans_num << std:: endl;
       } else{
         retrans_seg_id = std::stoi(temp[1]);
-        //std::cout << "\tRETRANS RETRANS seg_id = " << retrans_seg_id << std:: endl;
+        std::cout << "\tRETRANS RETRANS seg_id = " << retrans_seg_id << std:: endl;
       }
     }
 
