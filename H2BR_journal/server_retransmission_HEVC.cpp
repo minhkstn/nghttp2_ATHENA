@@ -119,7 +119,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
         return; 
     } 
 
-    std::cout << "[Minh] Prepare to REsend seg " << pushing_seg << std::endl;
+    std::cout << "[Minh] Prepare to REsend seg " << pushing_seg << " segments" << std::endl;
     print_new_seg(pushing_seg, retrans_bitrate, retrans_check);
     retrans_num_decrease--; 
     std::cout << "RETRANSING seg remaining: " << retrans_num_decrease << std::endl;
@@ -171,7 +171,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
     push->write_head(200);
     std::string m_file_path = getFilePath(retrans_bitrate, pushing_seg);
-    std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+    // std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
 
     push->end(file_generator(m_file_path));
   }
@@ -194,7 +194,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
       //                     << " at time: " << get_time() << "ms" << std::endl;
       // }
       std::cout << "Sent seg #" << req_seg_id << " bitrate " << next_bitrate 
-                                << " at time: " << get_time() << "ms" << std::endl;
+                                << " at time: " << get_time() << "ms\n" << std::endl;
 
       if (next_num == 0) {
         on_pushing_in_periodic_mode = false;
@@ -212,7 +212,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     push->write_head(200);
 
     std::string m_file_path = getFilePath(next_bitrate, req_seg_id);
-    std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+    // std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
 
     push->end(file_generator(m_file_path));          
   }
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       else if (temp[0] == "num")
         next_num = std::stoi(temp[1]); 
       else if (temp[0] == "start_seg"){
-        req_seg_id = std::stoi(temp[1]); // push <nex_num> segments from segment <req_seg_id+1>th
+        req_seg_id = std::stoi(temp[1]) -1; // push <nex_num> segments from segment <req_seg_id+1>th
         if (req_seg_id == 0){
           start_time = microsec_clock::local_time();  // count clock again after every session
         }
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
         std::cout << "\tVOD num = " << next_num << std:: endl; 
       }
       else if (temp[0] == "start_seg"){
-        req_seg_id = std::stoi(temp[1]); 
+        req_seg_id = std::stoi(temp[1]) - 1; 
         std::cout << "\tVOD start_seg = " << req_seg_id << std:: endl;
       }
     }
