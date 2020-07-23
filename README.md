@@ -201,4 +201,49 @@ void nghttp2_priority_spec_init(nghttp2_priority_spec *pri_spec, int32_t stream_
 	      	submit_request(client, dang_headers, client->reqvec.back().get()); 
 	    }
 	}
-    /*****************/
+************************************************************************************************************************
+## H2BR journal paper
+1. HEVC videos
+* Server
+	* Build:
+	```
+	$ cd ./H2BR_journal
+	$ g++ -o server_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+	```
+	* Run:
+	```
+	$ LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./server_retransmission_HEVC
+	```
+* Client
+	* File: **client_retransmission_HEVC.cpp** for all ABRs and retransmission technique
+	* Run a single session
+	```
+	$ ./nghttp -sn --retrans-method=$RETRANS --segment-duration=$SD --abr=$ABR --packet-loss=$PL --network-mode=$NETWORK --optimize-bitrate=$OPTIMIZE http://172.16.23.1:3002/rebuff/bitrate=1800/num=1
+	```
+	* Run all experiment sessions
+	```
+	$ ./H2BR_journal_run.sh
+	```
+2) SHVC videos
+* Server
+	* Build:
+	```
+	$ cd ./H2BR_journal
+	$ g++ -o server_retransmission_SHVC server_retransmission_SHVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+	```
+	* Run:
+	```
+	$ LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./server_retransmission_SHVC
+	```
+* Client
+	* File: 
+		* **client_retransmission_SHVC_AGG_H2BR.cc** for AGG ABR and with/without H2BR retransmission technique.
+		* **client_retransmission_SHVC_Backfilling.cc** for Backfilling ABR, of course without H2BR retransmission technique.
+	* Run a single session (for all ABRs)
+	```
+	$ ./nghttp -snv --buffer-max=20000 --packet-loss=0 http://172.16.23.1:3002/rebuff/segment=0/bitrate=1/num=1
+	```
+	* Run all experiment sessions
+	```
+	$ ./H2BR_journal_run_SHVC.sh
+	```
