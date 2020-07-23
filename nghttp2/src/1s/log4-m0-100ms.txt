@@ -1,0 +1,1396 @@
+00100 pipe 3 ip from 192.168.9.76 to me
+00200 pipe 3 ip from me to 192.168.9.76
+
+[PUSH] in stream 2
+********************* We start playing *********************
+[URI] 					http://192.168.9.76:3002/seg_1_rate_900
+[RECV] receive stream 2 Buff: 4600
+[INFO] Thrp: 1927.19	Buff: 5000
+
+[ADAPTATION] Invoke at time 1000ms 	 Thrp: 1927kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+
+[PUSH] in stream 4
+[URI] 					http://192.168.9.76:3002/seg_2_rate_900
+[RECV] receive stream 15 Buff: 4800
+[RECV] receive stream 4 Buff: 4400
+
+[PUSH] in stream 6
+[URI] 					http://192.168.9.76:3002/seg_3_rate_1500
+[INFO] Thrp: 1490.07	Buff: 5000
+
+[ADAPTATION] Invoke at time 2000ms 	 Thrp: 1490kbps 	 Buff: 5000ms
+Remaining: 1006.67 Data: 187500
+[OPT] Req Opt: 1200	 Change Opt: 1200
+
+[ADAPTATION] Request rate 1200
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #6
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 6 Buff: 5000
+
+[PUSH] in stream 8
+[URI] 					http://192.168.9.76:3002/seg_3_rate_1200
+[RECV] receive stream 17 Buff: 5900
+[RECV] receive stream 8 Buff: 5300
+
+[PUSH] in stream 10
+[URI] 					http://192.168.9.76:3002/seg_4_rate_1200
+[INFO] Thrp: 1990.05	Buff: 5000
+
+[ADAPTATION] Invoke at time 3000ms 	 Thrp: 1990kbps 	 Buff: 5000ms
+Remaining: 603 Data: 150000
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 19 Buff: 4900
+[RECV] receive stream 10 Buff: 4600
+[INFO] Thrp: 2424.24	Buff: 5000
+
+[PUSH] in stream 12
+[URI] 					http://192.168.9.76:3002/seg_5_rate_1500
+[RECV] receive stream 12 Buff: 4300
+
+[ADAPTATION] Invoke at time 4800ms 	 Thrp: 2424kbps 	 Buff: 5200ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 21 Buff: 5100
+
+[PUSH] in stream 14
+[URI] 					http://192.168.9.76:3002/seg_6_rate_2000
+[INFO] Thrp: 2001.89	Buff: 5000
+[RECV] receive stream 14 Buff: 4200
+
+[ADAPTATION] Invoke at time 5900ms 	 Thrp: 2001kbps 	 Buff: 5100ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 16
+[URI] 					http://192.168.9.76:3002/seg_7_rate_2000
+[INFO] Thrp: 2428.05	Buff: 5000
+
+[ADAPTATION] Invoke at time 6000ms 	 Thrp: 2428kbps 	 Buff: 5000ms
+Remaining: 823.705 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 16 Buff: 4100
+[INFO] Thrp: 2018.16	Buff: 5000
+
+[ADAPTATION] Invoke at time 7000ms 	 Thrp: 2018kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 18
+[URI] 					http://192.168.9.76:3002/seg_8_rate_2000
+[INFO] Thrp: 1871.65	Buff: 4000
+
+[ADAPTATION] Invoke at time 8000ms 	 Thrp: 1871kbps 	 Buff: 4000ms
+Remaining: 71.573 Data: 16745
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 18 Buff: 4000
+
+[PUSH] in stream 20
+[URI] 					http://192.168.9.76:3002/seg_9_rate_2000
+[RECV] receive stream 23 Buff: 4900
+[INFO] Thrp: 1663.56	Buff: 4000
+[RECV] receive stream 20 Buff: 3800
+
+[PUSH] in stream 22
+[URI] 					http://192.168.9.76:3002/seg_10_rate_1500
+
+[ADAPTATION] Invoke at time 9300ms 	 Thrp: 1663kbps 	 Buff: 4700ms
+Remaining: 792.216 Data: 164737
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 22 Buff: 4100
+[INFO] Thrp: 2091.22	Buff: 5000
+
+[ADAPTATION] Invoke at time 10000ms 	 Thrp: 2091kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+
+[PUSH] in stream 24
+[URI] 					http://192.168.9.76:3002/seg_11_rate_1500
+[RECV] receive stream 25 Buff: 4900
+[RECV] receive stream 24 Buff: 4300
+
+[PUSH] in stream 26
+[URI] 					http://192.168.9.76:3002/seg_12_rate_2000
+[INFO] Thrp: 2121.64	Buff: 5000
+
+[ADAPTATION] Invoke at time 11000ms 	 Thrp: 2121kbps 	 Buff: 5000ms
+Remaining: 942.667 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 26 Buff: 4200
+
+[PUSH] in stream 28
+[URI] 					http://192.168.9.76:3002/seg_13_rate_2000
+[INFO] Thrp: 2406.74	Buff: 5000
+
+[ADAPTATION] Invoke at time 12000ms 	 Thrp: 2406kbps 	 Buff: 5000ms
+Remaining: 831 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 28 Buff: 4100
+
+[PUSH] in stream 30
+[URI] 					http://192.168.9.76:3002/seg_14_rate_2000
+[INFO] Thrp: 2176.28	Buff: 5000
+
+[ADAPTATION] Invoke at time 13000ms 	 Thrp: 2176kbps 	 Buff: 5000ms
+Remaining: 919 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[INFO] Thrp: 1861.98	Buff: 4000
+
+[ADAPTATION] Invoke at time 14000ms 	 Thrp: 1861kbps 	 Buff: 4000ms
+Remaining: 78.1278 Data: 18184
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 30 Buff: 3900
+
+[PUSH] in stream 32
+[URI] 					http://192.168.9.76:3002/seg_15_rate_2000
+[RECV] receive stream 27 Buff: 4800
+[INFO] Thrp: 1343.15	Buff: 4000
+[RECV] receive stream 32 Buff: 3600
+
+[PUSH] in stream 34
+[URI] 					http://192.168.9.76:3002/seg_16_rate_1500
+
+[ADAPTATION] Invoke at time 15500ms 	 Thrp: 1343kbps 	 Buff: 4500ms
+Remaining: 1076.01 Data: 180656
+[OPT] Req Opt: 1200	 Change Opt: 1200
+
+[ADAPTATION] Request rate 1200
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #34
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 34 Buff: 4500
+
+[PUSH] in stream 36
+[URI] 					http://192.168.9.76:3002/seg_16_rate_1200
+[RECV] receive stream 29 Buff: 5300
+[INFO] Thrp: 1615.54	Buff: 5000
+[RECV] receive stream 36 Buff: 4500
+
+[PUSH] in stream 38
+[URI] 					http://192.168.9.76:3002/seg_17_rate_1200
+
+[ADAPTATION] Invoke at time 16600ms 	 Thrp: 1615kbps 	 Buff: 4400ms
+Remaining: 649.394 Data: 131140
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 31 Buff: 4200
+[INFO] Thrp: 1527.68	Buff: 4000
+[RECV] receive stream 38 Buff: 3800
+
+[PUSH] in stream 40
+[URI] 					http://192.168.9.76:3002/seg_18_rate_1500
+[INFO] Thrp: 1806.04	Buff: 4000
+[RECV] receive stream 40 Buff: 3900
+
+[PUSH] in stream 42
+[URI] 					http://192.168.9.76:3002/seg_19_rate_1500
+
+[ADAPTATION] Invoke at time 18200ms 	 Thrp: 1806kbps 	 Buff: 4800ms
+Remaining: 758.73 Data: 171287
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[INFO] Thrp: 1641.91	Buff: 4000
+
+[ADAPTATION] Invoke at time 19000ms 	 Thrp: 1641kbps 	 Buff: 4000ms
+Remaining: 20.8781 Data: 4285
+[OPT] Req Opt: 1200	 Change Opt: 1500
+[RECV] receive stream 42 Buff: 4000
+
+[PUSH] in stream 44
+[URI] 					http://192.168.9.76:3002/seg_20_rate_1500
+[RECV] receive stream 44 Buff: 4300
+
+[PUSH] in stream 46
+[URI] 					http://192.168.9.76:3002/seg_21_rate_1500
+[INFO] Thrp: 2010.85	Buff: 5000
+
+[ADAPTATION] Invoke at time 20000ms 	 Thrp: 2010kbps 	 Buff: 5000ms
+Remaining: 745.952 Data: 187500
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 33 Buff: 4900
+[RECV] receive stream 46 Buff: 4400
+
+[PUSH] in stream 48
+[URI] 					http://192.168.9.76:3002/seg_22_rate_2000
+[INFO] Thrp: 2170.77	Buff: 5000
+[RECV] receive stream 48 Buff: 4200
+
+[ADAPTATION] Invoke at time 21900ms 	 Thrp: 2170kbps 	 Buff: 5100ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 50
+[URI] 					http://192.168.9.76:3002/seg_23_rate_2000
+[INFO] Thrp: 2272.73	Buff: 5000
+
+[ADAPTATION] Invoke at time 22000ms 	 Thrp: 2272kbps 	 Buff: 5000ms
+Remaining: 880 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 50 Buff: 4100
+
+[PUSH] in stream 52
+[URI] 					http://192.168.9.76:3002/seg_24_rate_2000
+[INFO] Thrp: 2106.01	Buff: 5000
+
+[ADAPTATION] Invoke at time 23000ms 	 Thrp: 2106kbps 	 Buff: 5000ms
+Remaining: 944.326 Data: 248595
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 52 Buff: 4200
+
+[PUSH] in stream 54
+[URI] 					http://192.168.9.76:3002/seg_25_rate_2000
+[INFO] Thrp: 2315.2	Buff: 5000
+
+[ADAPTATION] Invoke at time 24000ms 	 Thrp: 2315kbps 	 Buff: 5000ms
+Remaining: 863.855 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 54 Buff: 4100
+
+[PUSH] in stream 56
+[URI] 					http://192.168.9.76:3002/seg_26_rate_2000
+[INFO] Thrp: 2185.79	Buff: 5000
+
+[ADAPTATION] Invoke at time 25000ms 	 Thrp: 2185kbps 	 Buff: 5000ms
+Remaining: 915 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 56 Buff: 4200
+
+[PUSH] in stream 58
+[URI] 					http://192.168.9.76:3002/seg_27_rate_2000
+[INFO] Thrp: 2285.71	Buff: 5000
+
+[ADAPTATION] Invoke at time 26000ms 	 Thrp: 2285kbps 	 Buff: 5000ms
+Remaining: 875 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[INFO] Thrp: 1751.29	Buff: 4000
+
+[ADAPTATION] Invoke at time 27000ms 	 Thrp: 1751kbps 	 Buff: 4000ms
+Remaining: 145.013 Data: 31745
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 35 Buff: 3900
+[RECV] receive stream 58 Buff: 3800
+
+[PUSH] in stream 60
+[URI] 					http://192.168.9.76:3002/seg_28_rate_1500
+[INFO] Thrp: 963.474	Buff: 4000
+[RECV] receive stream 60 Buff: 3500
+
+[PUSH] in stream 62
+[URI] 					http://192.168.9.76:3002/seg_29_rate_1500
+
+[ADAPTATION] Invoke at time 28600ms 	 Thrp: 963kbps 	 Buff: 4400ms
+Remaining: 1460.33 Data: 175874
+[OPT] Req Opt: 900	 Change Opt: 900
+
+[ADAPTATION] Request rate 900
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #62
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 62 Buff: 4400
+
+[PUSH] in stream 64
+[URI] 					http://192.168.9.76:3002/seg_29_rate_900
+[RECV] receive stream 37 Buff: 5300
+[INFO] Thrp: 1628.48	Buff: 5000
+[RECV] receive stream 64 Buff: 4800
+
+[PUSH] in stream 66
+[URI] 					http://192.168.9.76:3002/seg_30_rate_900
+
+[ADAPTATION] Invoke at time 29300ms 	 Thrp: 1628kbps 	 Buff: 4700ms
+Remaining: 447.784 Data: 91151
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 39 Buff: 4600
+[RECV] receive stream 66 Buff: 4400
+
+[PUSH] in stream 68
+[URI] 					http://192.168.9.76:3002/seg_31_rate_1500
+[INFO] Thrp: 2052.64	Buff: 5000
+[RECV] receive stream 68 Buff: 4300
+
+[ADAPTATION] Invoke at time 30800ms 	 Thrp: 2052kbps 	 Buff: 5200ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 41 Buff: 5100
+
+[PUSH] in stream 70
+[URI] 					http://192.168.9.76:3002/seg_32_rate_2000
+[INFO] Thrp: 1908.36	Buff: 5000
+[INFO] Thrp: 810.49	Buff: 4000
+[INFO] Thrp: 792.56	Buff: 3000
+[RECV] receive stream 70 Buff: 2600
+
+[PUSH] in stream 72
+[URI] 					http://192.168.9.76:3002/seg_33_rate_2000
+
+[ADAPTATION] Invoke at time 33500ms 	 Thrp: 792kbps 	 Buff: 3500ms
+Remaining: 2523.13 Data: 249966
+[OPT] Req Opt: 300	 Change Opt: 700
+
+[ADAPTATION] Request rate 300
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #72
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 72 Buff: 3500
+
+[PUSH] in stream 74
+[URI] 					http://192.168.9.76:3002/seg_33_rate_300
+[INFO] Thrp: 710.176	Buff: 4000
+[RECV] receive stream 43 Buff: 4000
+[RECV] receive stream 74 Buff: 3800
+
+[PUSH] in stream 76
+[URI] 					http://192.168.9.76:3002/seg_34_rate_300
+
+[ADAPTATION] Invoke at time 34300ms 	 Thrp: 710kbps 	 Buff: 3700ms
+Remaining: 229.081 Data: 20336
+[OPT] Req Opt: 300	 Change Opt: 700
+[ADAPTATION] Change rate 700
+
+[RECV] receive stream 76 Buff: 3600
+
+[PUSH] in stream 78
+[URI] 					http://192.168.9.76:3002/seg_35_rate_300
+[RECV] receive stream 45 Buff: 4500
+[RECV] receive stream 78 Buff: 4400
+
+[PUSH] in stream 80
+[URI] 					http://192.168.9.76:3002/seg_36_rate_700
+[INFO] Thrp: 1468.19	Buff: 5000
+
+[ADAPTATION] Invoke at time 35000ms 	 Thrp: 1468kbps 	 Buff: 5000ms
+Remaining: 476.778 Data: 87500
+[OPT] Req Opt: 1200	 Change Opt: 1200
+[ADAPTATION] Change rate 1200
+
+[RECV] receive stream 47 Buff: 4800
+[RECV] receive stream 80 Buff: 4700
+
+[PUSH] in stream 82
+[URI] 					http://192.168.9.76:3002/seg_37_rate_1200
+[INFO] Thrp: 2089.55	Buff: 5000
+[RECV] receive stream 82 Buff: 4500
+
+[ADAPTATION] Invoke at time 36600ms 	 Thrp: 2089kbps 	 Buff: 5400ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 49 Buff: 5300
+
+[PUSH] in stream 84
+[URI] 					http://192.168.9.76:3002/seg_38_rate_2000
+[INFO] Thrp: 2027.03	Buff: 5000
+[RECV] receive stream 84 Buff: 4100
+[INFO] Thrp: 2074.69	Buff: 5000
+
+[ADAPTATION] Invoke at time 38000ms 	 Thrp: 2074kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 86
+[URI] 					http://192.168.9.76:3002/seg_39_rate_2000
+[RECV] receive stream 86 Buff: 4200
+
+[PUSH] in stream 88
+[URI] 					http://192.168.9.76:3002/seg_40_rate_2000
+[INFO] Thrp: 2234.64	Buff: 5000
+
+[ADAPTATION] Invoke at time 39000ms 	 Thrp: 2234kbps 	 Buff: 5000ms
+Remaining: 895 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 88 Buff: 4300
+
+[PUSH] in stream 90
+[URI] 					http://192.168.9.76:3002/seg_41_rate_2000
+[INFO] Thrp: 2577.32	Buff: 5000
+
+[ADAPTATION] Invoke at time 40000ms 	 Thrp: 2577kbps 	 Buff: 5000ms
+Remaining: 776 Data: 250000
+[OPT] Req Opt: 2500	 Change Opt: 2500
+[ADAPTATION] Change rate 2500
+
+[RECV] receive stream 51 Buff: 4900
+[RECV] receive stream 90 Buff: 4300
+
+[PUSH] in stream 92
+[URI] 					http://192.168.9.76:3002/seg_42_rate_2500
+[INFO] Thrp: 2663.12	Buff: 5000
+[INFO] Thrp: 2492.82	Buff: 4000
+[RECV] receive stream 92 Buff: 4000
+
+[PUSH] in stream 94
+[URI] 					http://192.168.9.76:3002/seg_43_rate_2500
+
+[ADAPTATION] Invoke at time 42100ms 	 Thrp: 2492kbps 	 Buff: 4900ms
+Remaining: 917.143 Data: 285784
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 53 Buff: 4800
+[INFO] Thrp: 2457.17	Buff: 4000
+[RECV] receive stream 94 Buff: 4000
+
+[PUSH] in stream 96
+[URI] 					http://192.168.9.76:3002/seg_44_rate_2000
+[RECV] receive stream 96 Buff: 4200
+
+[ADAPTATION] Invoke at time 43900ms 	 Thrp: 2457kbps 	 Buff: 5100ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 98
+[URI] 					http://192.168.9.76:3002/seg_45_rate_2000
+[INFO] Thrp: 2446.55	Buff: 5000
+
+[ADAPTATION] Invoke at time 44000ms 	 Thrp: 2446kbps 	 Buff: 5000ms
+Remaining: 817.478 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[INFO] Thrp: 1618.38	Buff: 4000
+
+[ADAPTATION] Invoke at time 45000ms 	 Thrp: 1618kbps 	 Buff: 4000ms
+Remaining: 238.801 Data: 48309
+[OPT] Req Opt: 1200	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 98 Buff: 3900
+
+[PUSH] in stream 100
+[URI] 					http://192.168.9.76:3002/seg_46_rate_2000
+[RECV] receive stream 55 Buff: 4800
+[INFO] Thrp: 1940.41	Buff: 4000
+[RECV] receive stream 100 Buff: 3800
+
+[PUSH] in stream 102
+[URI] 					http://192.168.9.76:3002/seg_47_rate_1500
+
+[ADAPTATION] Invoke at time 46300ms 	 Thrp: 1940kbps 	 Buff: 4700ms
+Remaining: 693.969 Data: 168323
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 102 Buff: 4100
+
+[PUSH] in stream 104
+[URI] 					http://192.168.9.76:3002/seg_48_rate_1500
+[INFO] Thrp: 2043.97	Buff: 5000
+
+[ADAPTATION] Invoke at time 47000ms 	 Thrp: 2043kbps 	 Buff: 5000ms
+Remaining: 733.867 Data: 187500
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 57 Buff: 4900
+[RECV] receive stream 104 Buff: 4400
+
+[PUSH] in stream 106
+[URI] 					http://192.168.9.76:3002/seg_49_rate_2000
+[INFO] Thrp: 2262.44	Buff: 5000
+[RECV] receive stream 106 Buff: 4100
+
+[PUSH] in stream 108
+[URI] 					http://192.168.9.76:3002/seg_50_rate_2000
+[INFO] Thrp: 2051.28	Buff: 5000
+
+[ADAPTATION] Invoke at time 49000ms 	 Thrp: 2051kbps 	 Buff: 5000ms
+Remaining: 975 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 108 Buff: 4100
+
+[PUSH] in stream 110
+[URI] 					http://192.168.9.76:3002/seg_51_rate_2000
+[INFO] Thrp: 2097.22	Buff: 5000
+
+[ADAPTATION] Invoke at time 50000ms 	 Thrp: 2097kbps 	 Buff: 5000ms
+Remaining: 948.289 Data: 248596
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 110 Buff: 4200
+
+[PUSH] in stream 112
+[URI] 					http://192.168.9.76:3002/seg_52_rate_2000
+[INFO] Thrp: 2336.98	Buff: 5000
+
+[ADAPTATION] Invoke at time 51000ms 	 Thrp: 2336kbps 	 Buff: 5000ms
+Remaining: 855.806 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 112 Buff: 4200
+
+[PUSH] in stream 114
+[URI] 					http://192.168.9.76:3002/seg_53_rate_2000
+[INFO] Thrp: 2317.5	Buff: 5000
+
+[ADAPTATION] Invoke at time 52000ms 	 Thrp: 2317kbps 	 Buff: 5000ms
+Remaining: 863 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 114 Buff: 4300
+
+[PUSH] in stream 116
+[URI] 					http://192.168.9.76:3002/seg_54_rate_2000
+[INFO] Thrp: 2828.85	Buff: 5000
+
+[ADAPTATION] Invoke at time 53000ms 	 Thrp: 2828kbps 	 Buff: 5000ms
+Remaining: 707 Data: 250000
+[OPT] Req Opt: 2500	 Change Opt: 2500
+[ADAPTATION] Change rate 2500
+
+[RECV] receive stream 59 Buff: 4900
+[RECV] receive stream 116 Buff: 4200
+
+[PUSH] in stream 118
+[URI] 					http://192.168.9.76:3002/seg_55_rate_2500
+[INFO] Thrp: 2285.71	Buff: 5000
+[INFO] Thrp: 1952.85	Buff: 4000
+[RECV] receive stream 118 Buff: 3700
+
+[PUSH] in stream 120
+[URI] 					http://192.168.9.76:3002/seg_56_rate_2500
+
+[ADAPTATION] Invoke at time 55400ms 	 Thrp: 1952kbps 	 Buff: 4600ms
+Remaining: 1200.39 Data: 293024
+[OPT] Req Opt: 1500	 Change Opt: 1500
+
+[ADAPTATION] Request rate 1500
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #120
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 120 Buff: 4600
+
+[PUSH] in stream 122
+[URI] 					http://192.168.9.76:3002/seg_56_rate_1500
+[RECV] receive stream 61 Buff: 5400
+[INFO] Thrp: 1533.23	Buff: 5000
+[RECV] receive stream 122 Buff: 4300
+
+[PUSH] in stream 124
+[URI] 					http://192.168.9.76:3002/seg_57_rate_1500
+
+[ADAPTATION] Invoke at time 56800ms 	 Thrp: 1533kbps 	 Buff: 4200ms
+Remaining: 908.431 Data: 174104
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[INFO] Thrp: 1339.66	Buff: 4000
+
+[ADAPTATION] Invoke at time 57000ms 	 Thrp: 1339kbps 	 Buff: 4000ms
+Remaining: 841.579 Data: 140929
+[OPT] Req Opt: 1200	 Change Opt: 1200
+[ADAPTATION] Change rate 1200
+
+[RECV] receive stream 63 Buff: 3800
+[INFO] Thrp: 910.072	Buff: 3000
+[RECV] receive stream 124 Buff: 2800
+
+[PUSH] in stream 126
+[URI] 					http://192.168.9.76:3002/seg_58_rate_1200
+[INFO] Thrp: 1037.87	Buff: 3000
+[RECV] receive stream 126 Buff: 2600
+
+[PUSH] in stream 128
+[URI] 					http://192.168.9.76:3002/seg_59_rate_1200
+
+[ADAPTATION] Invoke at time 59500ms 	 Thrp: 1037kbps 	 Buff: 3500ms
+Remaining: 1135.56 Data: 147320
+[OPT] Req Opt: 300	 Change Opt: 900
+
+[ADAPTATION] Request rate 300
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #128
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 128 Buff: 3500
+[INFO] Thrp: 401.968	Buff: 4000
+
+[PUSH] in stream 130
+[URI] 					http://192.168.9.76:3002/seg_59_rate_300
+[RECV] receive stream 65 Buff: 4000
+[RECV] receive stream 130 Buff: 3700
+
+[PUSH] in stream 132
+[URI] 					http://192.168.9.76:3002/seg_60_rate_300
+
+[ADAPTATION] Invoke at time 60400ms 	 Thrp: 401kbps 	 Buff: 3600ms
+Remaining: 361.123 Data: 18145
+[OPT] Req Opt: 200	 Change Opt: 300
+[RECV] receive stream 132 Buff: 3500
+
+[PUSH] in stream 134
+[URI] 					http://192.168.9.76:3002/seg_61_rate_300
+[RECV] receive stream 134 Buff: 4300
+
+[PUSH] in stream 136
+[URI] 					http://192.168.9.76:3002/seg_62_rate_300
+[INFO] Thrp: 1255.23	Buff: 5000
+
+[ADAPTATION] Invoke at time 61000ms 	 Thrp: 1255kbps 	 Buff: 5000ms
+Remaining: 239 Data: 37500
+[OPT] Req Opt: 1200	 Change Opt: 1200
+[ADAPTATION] Change rate 1200
+
+[RECV] receive stream 136 Buff: 4900
+[RECV] receive stream 67 Buff: 5800
+
+[PUSH] in stream 138
+[URI] 					http://192.168.9.76:3002/seg_63_rate_1200
+[INFO] Thrp: 2040.82	Buff: 5000
+[RECV] receive stream 138 Buff: 4500
+
+[ADAPTATION] Invoke at time 62600ms 	 Thrp: 2040kbps 	 Buff: 5400ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 69 Buff: 5300
+
+[PUSH] in stream 140
+[URI] 					http://192.168.9.76:3002/seg_64_rate_2000
+[INFO] Thrp: 2226.35	Buff: 5000
+[RECV] receive stream 140 Buff: 4200
+
+[ADAPTATION] Invoke at time 63900ms 	 Thrp: 2226kbps 	 Buff: 5100ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 142
+[URI] 					http://192.168.9.76:3002/seg_65_rate_2000
+[INFO] Thrp: 2234.64	Buff: 5000
+
+[ADAPTATION] Invoke at time 64000ms 	 Thrp: 2234kbps 	 Buff: 5000ms
+Remaining: 895 Data: 250000
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[RECV] receive stream 142 Buff: 4300
+
+[PUSH] in stream 144
+[URI] 					http://192.168.9.76:3002/seg_66_rate_2000
+[INFO] Thrp: 2567.39	Buff: 5000
+
+[ADAPTATION] Invoke at time 65000ms 	 Thrp: 2567kbps 	 Buff: 5000ms
+Remaining: 779 Data: 250000
+[OPT] Req Opt: 2500	 Change Opt: 2500
+[ADAPTATION] Change rate 2500
+
+[RECV] receive stream 71 Buff: 4900
+[RECV] receive stream 144 Buff: 4300
+
+[PUSH] in stream 146
+[URI] 					http://192.168.9.76:3002/seg_67_rate_2500
+[INFO] Thrp: 2751.03	Buff: 5000
+[RECV] receive stream 146 Buff: 4100
+
+[PUSH] in stream 148
+[URI] 					http://192.168.9.76:3002/seg_68_rate_2500
+[INFO] Thrp: 2574.67	Buff: 5000
+
+[ADAPTATION] Invoke at time 67000ms 	 Thrp: 2574kbps 	 Buff: 5000ms
+Remaining: 971 Data: 312500
+[OPT] Req Opt: 2500	 Change Opt: 2500
+[INFO] Thrp: 2459.12	Buff: 4000
+
+[ADAPTATION] Invoke at time 68000ms 	 Thrp: 2459kbps 	 Buff: 4000ms
+Remaining: 20.6253 Data: 6340
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 148 Buff: 4000
+
+[PUSH] in stream 150
+[URI] 					http://192.168.9.76:3002/seg_69_rate_2500
+[RECV] receive stream 73 Buff: 4900
+[INFO] Thrp: 2508.44	Buff: 4000
+[RECV] receive stream 150 Buff: 4000
+
+[PUSH] in stream 152
+[URI] 					http://192.168.9.76:3002/seg_70_rate_2000
+
+[ADAPTATION] Invoke at time 69100ms 	 Thrp: 2508kbps 	 Buff: 4900ms
+Remaining: 723.15 Data: 226747
+[OPT] Req Opt: 2500	 Change Opt: 2500
+[ADAPTATION] Change rate 2500
+
+[RECV] receive stream 75 Buff: 4800
+[RECV] receive stream 152 Buff: 4200
+
+[PUSH] in stream 154
+[URI] 					http://192.168.9.76:3002/seg_71_rate_2500
+[INFO] Thrp: 2463.6	Buff: 5000
+[RECV] receive stream 154 Buff: 4100
+[INFO] Thrp: 2606.88	Buff: 5000
+
+[ADAPTATION] Invoke at time 71000ms 	 Thrp: 2606kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2500	 Change Opt: 2500
+
+[PUSH] in stream 156
+[URI] 					http://192.168.9.76:3002/seg_72_rate_2500
+[INFO] Thrp: 2402.95	Buff: 4000
+
+[ADAPTATION] Invoke at time 72000ms 	 Thrp: 2402kbps 	 Buff: 4000ms
+Remaining: 44.3888 Data: 13333
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 156 Buff: 4000
+
+[PUSH] in stream 158
+[URI] 					http://192.168.9.76:3002/seg_73_rate_2500
+[RECV] receive stream 77 Buff: 4800
+[INFO] Thrp: 2260.76	Buff: 4000
+[RECV] receive stream 158 Buff: 3900
+
+[PUSH] in stream 160
+[URI] 					http://192.168.9.76:3002/seg_74_rate_2000
+
+[ADAPTATION] Invoke at time 73200ms 	 Thrp: 2260kbps 	 Buff: 4800ms
+Remaining: 863.277 Data: 243958
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[INFO] Thrp: 1792.58	Buff: 4000
+
+[ADAPTATION] Invoke at time 74000ms 	 Thrp: 1792kbps 	 Buff: 4000ms
+Remaining: 311.199 Data: 69731
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 79 Buff: 3800
+[RECV] receive stream 160 Buff: 3600
+
+[PUSH] in stream 162
+[URI] 					http://192.168.9.76:3002/seg_75_rate_1500
+[INFO] Thrp: 1061.92	Buff: 4000
+[RECV] receive stream 162 Buff: 3300
+
+[PUSH] in stream 164
+[URI] 					http://192.168.9.76:3002/seg_76_rate_1500
+
+[ADAPTATION] Invoke at time 75800ms 	 Thrp: 1061kbps 	 Buff: 4200ms
+Remaining: 1376.58 Data: 182726
+[OPT] Req Opt: 900	 Change Opt: 900
+
+[ADAPTATION] Request rate 900
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #164
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 164 Buff: 4200
+
+[PUSH] in stream 166
+[URI] 					http://192.168.9.76:3002/seg_76_rate_900
+[RECV] receive stream 81 Buff: 5100
+[INFO] Thrp: 1347.29	Buff: 5000
+[RECV] receive stream 166 Buff: 4700
+
+[PUSH] in stream 168
+[URI] 					http://192.168.9.76:3002/seg_77_rate_900
+
+[ADAPTATION] Invoke at time 76400ms 	 Thrp: 1347kbps 	 Buff: 4600ms
+Remaining: 665.759 Data: 112121
+[OPT] Req Opt: 1200	 Change Opt: 1200
+[ADAPTATION] Change rate 1200
+
+[RECV] receive stream 83 Buff: 4400
+[RECV] receive stream 168 Buff: 4300
+
+[PUSH] in stream 170
+[URI] 					http://192.168.9.76:3002/seg_78_rate_1200
+[INFO] Thrp: 2212.02	Buff: 5000
+[RECV] receive stream 170 Buff: 4600
+
+[ADAPTATION] Invoke at time 77500ms 	 Thrp: 2212kbps 	 Buff: 5500ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+[ADAPTATION] Change rate 2000
+
+[RECV] receive stream 85 Buff: 5400
+
+[PUSH] in stream 172
+[URI] 					http://192.168.9.76:3002/seg_79_rate_2000
+[INFO] Thrp: 2526.32	Buff: 5000
+[RECV] receive stream 172 Buff: 4100
+[INFO] Thrp: 2010.05	Buff: 5000
+
+[ADAPTATION] Invoke at time 79000ms 	 Thrp: 2010kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 2000	 Change Opt: 2000
+
+[PUSH] in stream 174
+[URI] 					http://192.168.9.76:3002/seg_80_rate_2000
+[INFO] Thrp: 1703.73	Buff: 4000
+
+[ADAPTATION] Invoke at time 80000ms 	 Thrp: 1703kbps 	 Buff: 4000ms
+Remaining: 177.892 Data: 37885
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 174 Buff: 3900
+
+[PUSH] in stream 176
+[URI] 					http://192.168.9.76:3002/seg_81_rate_2000
+[RECV] receive stream 87 Buff: 4800
+[INFO] Thrp: 1388.53	Buff: 4000
+[RECV] receive stream 176 Buff: 3200
+
+[PUSH] in stream 178
+[URI] 					http://192.168.9.76:3002/seg_82_rate_1500
+
+[ADAPTATION] Invoke at time 81900ms 	 Thrp: 1388kbps 	 Buff: 4100ms
+Remaining: 1015.67 Data: 176286
+[OPT] Req Opt: 1200	 Change Opt: 1200
+
+[ADAPTATION] Request rate 1200
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #178
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 178 Buff: 4100
+[INFO] Thrp: 1007.66	Buff: 5000
+
+[PUSH] in stream 180
+[URI] 					http://192.168.9.76:3002/seg_82_rate_1200
+[RECV] receive stream 89 Buff: 4800
+[INFO] Thrp: 1493.1	Buff: 4000
+[RECV] receive stream 180 Buff: 4000
+
+[PUSH] in stream 182
+[URI] 					http://192.168.9.76:3002/seg_83_rate_1200
+
+[ADAPTATION] Invoke at time 83100ms 	 Thrp: 1493kbps 	 Buff: 3900ms
+Remaining: 714.182 Data: 133293
+[OPT] Req Opt: 900	 Change Opt: 1200
+[RECV] receive stream 182 Buff: 3300
+
+[PUSH] in stream 184
+[URI] 					http://192.168.9.76:3002/seg_84_rate_1200
+[INFO] Thrp: 1656.95	Buff: 4000
+
+[ADAPTATION] Invoke at time 84000ms 	 Thrp: 1656kbps 	 Buff: 4000ms
+Remaining: 479.004 Data: 99211
+[OPT] Req Opt: 1200	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 91 Buff: 3800
+[RECV] receive stream 184 Buff: 3600
+
+[PUSH] in stream 186
+[URI] 					http://192.168.9.76:3002/seg_85_rate_1500
+[INFO] Thrp: 1740.41	Buff: 4000
+[RECV] receive stream 186 Buff: 3700
+
+[PUSH] in stream 188
+[URI] 					http://192.168.9.76:3002/seg_86_rate_1500
+
+[ADAPTATION] Invoke at time 85400ms 	 Thrp: 1740kbps 	 Buff: 4600ms
+Remaining: 834.397 Data: 181524
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[INFO] Thrp: 1608.98	Buff: 4000
+
+[ADAPTATION] Invoke at time 86000ms 	 Thrp: 1608kbps 	 Buff: 4000ms
+Remaining: 279.297 Data: 56173
+[OPT] Req Opt: 1200	 Change Opt: 1500
+[RECV] receive stream 188 Buff: 3700
+
+[PUSH] in stream 190
+[URI] 					http://192.168.9.76:3002/seg_87_rate_1500
+[INFO] Thrp: 1340.16	Buff: 4000
+
+[ADAPTATION] Invoke at time 87000ms 	 Thrp: 1340kbps 	 Buff: 4000ms
+Remaining: 455.586 Data: 76320
+[OPT] Req Opt: 1200	 Change Opt: 1200
+[ADAPTATION] Change rate 1200
+
+[RECV] receive stream 93 Buff: 3800
+[RECV] receive stream 190 Buff: 3500
+
+[PUSH] in stream 192
+[URI] 					http://192.168.9.76:3002/seg_88_rate_1200
+[INFO] Thrp: 1001.65	Buff: 4000
+[INFO] Thrp: 582.128	Buff: 3000
+[RECV] receive stream 192 Buff: 2700
+
+[PUSH] in stream 194
+[URI] 					http://192.168.9.76:3002/seg_89_rate_1200
+
+[ADAPTATION] Invoke at time 89400ms 	 Thrp: 582kbps 	 Buff: 3600ms
+Remaining: 1949.94 Data: 141889
+[OPT] Req Opt: 200	 Change Opt: 500
+
+[ADAPTATION] Request rate 200
+===============Client (1-0)
+===============Client (1-1)
+
+[ADAPTATION] Refuse stream #194
+===============Client (2)
+===============Client (3)
+[RECV] receive stream 194 Buff: 3600
+
+[PUSH] in stream 196
+[URI] 					http://192.168.9.76:3002/seg_89_rate_200
+[RECV] receive stream 95 Buff: 4300
+[RECV] receive stream 196 Buff: 4100
+
+[PUSH] in stream 198
+[URI] 					http://192.168.9.76:3002/seg_90_rate_200
+[INFO] Thrp: 762.325	Buff: 4000
+
+[ADAPTATION] Invoke at time 90000ms 	 Thrp: 762kbps 	 Buff: 4000ms
+Remaining: 176.513 Data: 16820
+[OPT] Req Opt: 500	 Change Opt: 700
+[ADAPTATION] Change rate 700
+
+[RECV] receive stream 198 Buff: 3900
+
+[PUSH] in stream 200
+[URI] 					http://192.168.9.76:3002/seg_91_rate_200
+[RECV] receive stream 97 Buff: 4700
+[RECV] receive stream 200 Buff: 4700
+
+[PUSH] in stream 202
+[URI] 					http://192.168.9.76:3002/seg_92_rate_700
+[INFO] Thrp: 955.886	Buff: 5000
+
+[ADAPTATION] Invoke at time 91000ms 	 Thrp: 955kbps 	 Buff: 5000ms
+Remaining: 732.305 Data: 87500
+[OPT] Req Opt: 900	 Change Opt: 900
+[ADAPTATION] Change rate 900
+
+[RECV] receive stream 99 Buff: 4800
+[RECV] receive stream 202 Buff: 4600
+
+[PUSH] in stream 204
+[URI] 					http://192.168.9.76:3002/seg_93_rate_900
+[INFO] Thrp: 1750	Buff: 5000
+[RECV] receive stream 204 Buff: 4500
+
+[ADAPTATION] Invoke at time 92600ms 	 Thrp: 1750kbps 	 Buff: 5400ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[ADAPTATION] Change rate 1500
+
+[RECV] receive stream 101 Buff: 5300
+
+[PUSH] in stream 206
+[URI] 					http://192.168.9.76:3002/seg_94_rate_1500
+[INFO] Thrp: 1587.3	Buff: 5000
+[RECV] receive stream 206 Buff: 4300
+
+[ADAPTATION] Invoke at time 93800ms 	 Thrp: 1587kbps 	 Buff: 5200ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 1500	 Change Opt: 1500
+
+[PUSH] in stream 208
+[URI] 					http://192.168.9.76:3002/seg_95_rate_1500
+[INFO] Thrp: 1935.48	Buff: 5000
+
+[ADAPTATION] Invoke at time 94000ms 	 Thrp: 1935kbps 	 Buff: 5000ms
+Remaining: 775 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 208 Buff: 4300
+
+[PUSH] in stream 210
+[URI] 					http://192.168.9.76:3002/seg_96_rate_1500
+[INFO] Thrp: 1945.53	Buff: 5000
+
+[ADAPTATION] Invoke at time 95000ms 	 Thrp: 1945kbps 	 Buff: 5000ms
+Remaining: 771 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 210 Buff: 4200
+
+[PUSH] in stream 212
+[URI] 					http://192.168.9.76:3002/seg_97_rate_1500
+[INFO] Thrp: 1813.78	Buff: 5000
+
+[ADAPTATION] Invoke at time 96000ms 	 Thrp: 1813kbps 	 Buff: 5000ms
+Remaining: 827 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 212 Buff: 4300
+
+[PUSH] in stream 214
+[URI] 					http://192.168.9.76:3002/seg_98_rate_1500
+[INFO] Thrp: 1997.34	Buff: 5000
+
+[ADAPTATION] Invoke at time 97000ms 	 Thrp: 1997kbps 	 Buff: 5000ms
+Remaining: 751 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 214 Buff: 4100
+
+[PUSH] in stream 216
+[URI] 					http://192.168.9.76:3002/seg_99_rate_1500
+[INFO] Thrp: 1659.29	Buff: 5000
+
+[ADAPTATION] Invoke at time 98000ms 	 Thrp: 1659kbps 	 Buff: 5000ms
+Remaining: 904 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 216 Buff: 4200
+
+[PUSH] in stream 218
+[URI] 					http://192.168.9.76:3002/seg_100_rate_1500
+[INFO] Thrp: 1858.74	Buff: 5000
+
+[ADAPTATION] Invoke at time 99000ms 	 Thrp: 1858kbps 	 Buff: 5000ms
+Remaining: 807 Data: 187500
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 218 Buff: 4200
+[INFO] Thrp: 1736.11	Buff: 5000
+
+[ADAPTATION] Invoke at time 100000ms 	 Thrp: 1736kbps 	 Buff: 5000ms
+Remaining: 0 Data: 0
+[OPT] Req Opt: 1500	 Change Opt: 1500
+[RECV] receive stream 13 Buff: 5000
+***** Statistics *****
+
+Request timing:
+  responseEnd: the  time  when  last  byte of  response  was  received
+               relative to connectEnd
+ requestStart: the time  just before  first byte  of request  was sent
+               relative  to connectEnd.   If  '*' is  shown, this  was
+               pushed by server.
+      process: responseEnd - requestStart
+         code: HTTP status code
+         size: number  of  bytes  received as  response  body  without
+               inflation.
+          URI: request URI
+
+see http://www.w3.org/TR/resource-timing/#processing-model
+
+sorted by 'complete'
+
+id  responseEnd responseStart requestStart  process code size request path
+ 34 +,,*(*,/()+/0+us       +16.53s *    +16.53s ,,*(*+(,0(/,/us  200   6K /seg_16_rate_1500
+ 62 +,,*(*,/()+/0+us       +29.58s *    +29.58s ,,*(*)/,+./0+us  200  11K /seg_29_rate_1500
+ 72 +,,*(*,/()+/0+us       +34.54s *    +34.54s ,,*(*)*,/*/-'us  200   34 /seg_33_rate_2000
+120 +,,*(*,/()+/0+us       +56.38s *    +56.38s ,,*(*'(.+*/,+us  200  19K /seg_56_rate_2500
+128 +,,*(*,/()+/0+us       +60.53s *    +60.53s ,,*()0.,00/,)us  200   2K /seg_59_rate_1200
+164 +,,*(*,/()+/0+us       +76.83s *    +76.83s ,,*()/()0(/,,us  200   4K /seg_76_rate_1500
+178 +,,*(*,/()+/0+us       +82.88s *    +82.88s ,,*().,)+*/,)us  200  10K /seg_82_rate_1500
+194 +,,*(*,/()+/0+us       +90.40s *    +90.40s ,,*()-..)*/,0us  200   7K /seg_89_rate_1200
+  2      +1.52s        +1.06s *     +1.05s 471.81ms  200 109K /seg_1_rate_900
+ 15      +2.32s        +2.31s       +2.05s 263.64ms  200   17 /change/1500
+  4      +2.66s        +2.06s *     +2.05s 607.69ms  200 109K /seg_2_rate_900
+ 17      +3.21s        +3.21s       +3.05s 159.88ms  200   17 /req/1200/2
+  8      +3.82s        +3.21s *     +3.21s 603.90ms  200 146K /seg_3_rate_1200
+ 19      +4.22s        +4.22s       +4.05s 167.75ms  200   17 /change/1500
+ 10      +4.55s        +4.06s *     +4.05s 499.88ms  200 146K /seg_4_rate_1200
+ 12      +5.81s        +5.06s *     +5.05s 759.48ms  200 183K /seg_5_rate_1500
+ 21      +5.96s        +5.96s       +5.85s 107.69ms  200   17 /change/2000
+ 14      +6.87s        +6.05s *     +6.05s 819.93ms  200 244K /seg_6_rate_2000
+ 16      +8.05s        +7.06s *     +7.05s 995.90ms  200 244K /seg_7_rate_2000
+ 18      +9.10s        +8.06s *     +8.05s    1.05s  200 244K /seg_8_rate_2000
+ 23      +9.18s        +9.18s       +9.05s 126.78ms  200   17 /change/1500
+ 20     +10.30s        +9.11s *     +9.11s    1.20s  200 244K /seg_9_rate_2000
+ 22     +11.00s       +10.31s *    +10.31s 695.88ms  200 183K /seg_10_rate_1500
+ 25     +11.19s       +11.19s      +11.05s 139.61ms  200   17 /change/2000
+ 24     +11.76s       +11.06s *    +11.06s 707.95ms  200 183K /seg_11_rate_1500
+ 26     +12.89s       +12.06s *    +12.05s 835.92ms  200 244K /seg_12_rate_2000
+ 28     +13.98s       +13.06s *    +13.05s 923.87ms  200 244K /seg_13_rate_2000
+ 30     +15.17s       +14.06s *    +14.05s    1.12s  200 244K /seg_14_rate_2000
+ 27     +15.29s       +15.29s      +15.05s 239.66ms  200   17 /change/1500
+ 32     +16.53s       +15.17s *    +15.17s    1.36s  200 244K /seg_15_rate_2000
+ 29     +16.79s       +16.79s      +16.55s 234.93ms  200   17 /req/1200/15
+ 36     +17.57s       +16.79s *    +16.79s 779.91ms  200 146K /seg_16_rate_1200
+ 31     +17.86s       +17.86s      +17.65s 211.73ms  200   17 /change/1500
+ 38     +18.29s       +17.57s *    +17.57s 719.91ms  200 146K /seg_17_rate_1200
+ 40     +19.18s       +18.29s *    +18.29s 887.89ms  200 183K /seg_18_rate_1500
+ 42     +20.08s       +19.18s *    +19.18s 907.91ms  200 183K /seg_19_rate_1500
+ 44     +20.82s       +20.09s *    +20.09s 731.91ms  200 183K /seg_20_rate_1500
+ 33     +21.21s       +21.21s      +21.05s 159.79ms  200   17 /change/2000
+ 46     +21.75s       +21.06s *    +21.05s 695.92ms  200 183K /seg_21_rate_1500
+ 48     +22.94s       +22.06s *    +22.05s 883.92ms  200 244K /seg_22_rate_2000
+ 50     +24.01s       +23.06s *    +23.05s 959.93ms  200 244K /seg_23_rate_2000
+ 52     +24.91s       +24.05s *    +24.05s 859.93ms  200 244K /seg_24_rate_2000
+ 54     +25.97s       +25.06s *    +25.05s 919.92ms  200 244K /seg_25_rate_2000
+ 56     +26.93s       +26.06s *    +26.05s 879.93ms  200 244K /seg_26_rate_2000
+ 35     +28.24s       +28.24s      +28.05s 190.81ms  200   17 /change/1500
+ 58     +28.26s       +27.06s *    +27.05s    1.20s  200 244K /seg_27_rate_2000
+ 60     +29.58s       +28.26s *    +28.26s    1.32s  200 183K /seg_28_rate_1500
+ 37     +29.83s       +29.83s      +29.65s 175.82ms  200   16 /req/900/28
+ 64     +30.30s       +29.83s *    +29.83s 471.91ms  200 109K /seg_29_rate_900
+ 39     +30.54s       +30.48s      +30.35s 187.78ms  200   17 /change/1500
+ 66     +30.72s       +30.30s *    +30.30s 423.89ms  200 109K /seg_30_rate_900
+ 68     +31.85s       +31.06s *    +31.05s 795.93ms  200 183K /seg_31_rate_1500
+ 41     +31.96s       +31.96s      +31.85s 107.69ms  200   17 /change/2000
+ 70     +34.54s       +32.05s *    +32.05s    2.49s  200 244K /seg_32_rate_2000
+ 43     +35.06s       +34.00s      +34.55s 511.57ms  200   16 /req/300/32
+ 74     +35.29s       +34.00s *    +34.00s 295.89ms  200  36K /seg_33_rate_300
+ 76     +35.48s       +35.29s *    +35.29s 187.89ms  200  36K /seg_34_rate_300
+ 45     +35.62s       +35.57s      +35.35s 270.78ms  200   16 /change/700
+ 78     +35.67s       +35.48s *    +35.48s 187.94ms  200  36K /seg_35_rate_300
+ 47     +36.29s       +36.29s      +36.05s 239.80ms  200   17 /change/1200
+ 80     +36.39s       +36.06s *    +36.05s 339.92ms  200  85K /seg_36_rate_700
+ 82     +37.65s       +37.06s *    +37.05s 595.73ms  200 146K /seg_37_rate_1200
+ 49     +37.76s       +37.76s      +37.65s 107.69ms  200   17 /change/2000
+ 84     +39.02s       +38.06s *    +38.05s 967.89ms  200 244K /seg_38_rate_2000
+ 86     +39.95s       +39.06s *    +39.06s 895.93ms  200 244K /seg_39_rate_2000
+ 88     +40.83s       +40.06s *    +40.05s 779.92ms  200 244K /seg_40_rate_2000
+ 51     +41.19s       +41.19s      +41.05s 139.79ms  200   17 /change/2500
+ 90     +41.81s       +41.06s *    +41.05s 755.92ms  200 244K /seg_41_rate_2000
+ 92     +43.10s       +42.06s *    +42.05s    1.05s  200 305K /seg_42_rate_2500
+ 53     +43.32s       +43.27s      +43.15s 170.76ms  200   17 /change/2000
+ 94     +44.06s       +43.11s *    +43.11s 959.89ms  200 305K /seg_43_rate_2500
+ 96     +44.90s       +44.07s *    +44.07s 831.90ms  200 244K /seg_44_rate_2000
+ 98     +46.25s       +45.06s *    +45.05s    1.20s  200 244K /seg_45_rate_2000
+ 55     +46.32s       +46.26s      +46.05s 262.77ms  200   17 /change/1500
+100     +47.29s       +46.25s *    +46.25s    1.04s  200 244K /seg_46_rate_2000
+102     +48.01s       +47.29s *    +47.29s 715.92ms  200 183K /seg_47_rate_1500
+ 57     +48.18s       +48.18s      +48.05s 127.80ms  200   17 /change/2000
+104     +48.72s       +48.06s *    +48.05s 667.92ms  200 183K /seg_48_rate_1500
+106     +50.03s       +49.06s *    +49.05s 979.90ms  200 244K /seg_49_rate_2000
+108     +51.02s       +50.06s *    +50.05s 963.93ms  200 244K /seg_50_rate_2000
+110     +51.90s       +51.05s *    +51.05s 851.92ms  200 244K /seg_51_rate_2000
+112     +52.92s       +52.06s *    +52.05s 867.92ms  200 244K /seg_52_rate_2000
+114     +53.76s       +53.06s *    +53.05s 711.92ms  200 244K /seg_53_rate_2000
+ 59     +54.22s       +54.22s      +54.05s 163.78ms  200   17 /change/2500
+116     +54.93s       +54.06s *    +54.05s 879.92ms  200 244K /seg_54_rate_2000
+118     +56.38s       +55.06s *    +55.05s    1.33s  200 305K /seg_55_rate_2500
+ 61     +56.72s       +56.67s      +56.45s 266.79ms  200   17 /req/1500/55
+122     +57.77s       +56.67s *    +56.67s    1.10s  200 183K /seg_56_rate_1500
+ 63     +58.34s       +58.34s      +58.05s 287.60ms  200   17 /change/1200
+124     +59.30s       +57.77s *    +57.77s    1.52s  200 183K /seg_57_rate_1500
+126     +60.52s       +59.30s *    +59.30s    1.23s  200 146K /seg_58_rate_1200
+ 65     +61.13s       +61.07s      +60.55s 579.78ms  200   16 /req/300/58
+130     +61.38s       +61.07s *    +61.07s 307.90ms  200  36K /seg_59_rate_300
+132     +61.58s       +61.38s *    +61.38s 207.89ms  200  36K /seg_60_rate_300
+134     +61.79s       +61.59s *    +61.59s 203.92ms  200  36K /seg_61_rate_300
+136     +62.21s       +62.06s *    +62.05s 155.93ms  200  36K /seg_62_rate_300
+ 67     +62.27s       +62.27s      +62.05s 215.81ms  200   17 /change/1200
+138     +63.60s       +63.06s *    +63.05s 543.74ms  200 146K /seg_63_rate_1200
+ 69     +63.76s       +63.76s      +63.65s 103.65ms  200   17 /change/2000
+140     +64.95s       +64.06s *    +64.05s 899.88ms  200 244K /seg_64_rate_2000
+142     +65.84s       +65.06s *    +65.05s 783.92ms  200 244K /seg_65_rate_2000
+ 71     +66.19s       +66.19s      +66.05s 135.82ms  200   17 /change/2500
+144     +66.78s       +66.06s *    +66.05s 731.92ms  200 244K /seg_66_rate_2000
+146     +68.03s       +67.06s *    +67.05s 975.92ms  200 305K /seg_67_rate_2500
+148     +69.07s       +68.06s *    +68.05s    1.02s  200 305K /seg_68_rate_2500
+ 73     +69.17s       +69.17s      +69.05s 115.69ms  200   17 /change/2000
+150     +70.06s       +69.07s *    +69.07s 995.92ms  200 305K /seg_69_rate_2500
+ 75     +70.27s       +70.27s      +70.15s 115.84ms  200   17 /change/2500
+152     +70.88s       +70.07s *    +70.06s 819.94ms  200 244K /seg_70_rate_2000
+154     +72.02s       +71.06s *    +71.05s 963.92ms  200 305K /seg_71_rate_2500
+156     +73.13s       +72.06s *    +72.06s    1.08s  200 305K /seg_72_rate_2500
+ 77     +73.26s       +73.20s      +73.05s 202.53ms  200   17 /change/2000
+158     +74.24s       +73.13s *    +73.13s    1.11s  200 305K /seg_73_rate_2500
+ 79     +75.31s       +75.24s      +75.05s 254.79ms  200   17 /change/1500
+160     +75.48s       +74.24s *    +74.24s    1.24s  200 244K /seg_74_rate_2000
+162     +76.83s       +75.49s *    +75.48s    1.35s  200 183K /seg_75_rate_1500
+ 81     +76.98s       +76.98s      +76.85s 126.91ms  200   16 /req/900/75
+166     +77.45s       +76.98s *    +76.98s 471.93ms  200 109K /seg_76_rate_900
+ 83     +77.66s       +77.59s      +77.45s 203.75ms  200   17 /change/1200
+168     +77.80s       +77.45s *    +77.45s 347.88ms  200 109K /seg_77_rate_900
+170     +78.53s       +78.06s *    +78.05s 479.72ms  200 146K /seg_78_rate_1200
+ 85     +78.66s       +78.66s      +78.55s 107.63ms  200   17 /change/2000
+172     +80.05s       +79.06s *    +79.05s 999.92ms  200 244K /seg_79_rate_2000
+174     +81.23s       +80.06s *    +80.06s    1.17s  200 244K /seg_80_rate_2000
+ 87     +81.29s       +81.23s      +81.05s 234.74ms  200   17 /change/1500
+176     +82.88s       +81.23s *    +81.23s    1.65s  200 244K /seg_81_rate_2000
+ 89     +83.34s       +83.28s      +82.95s 383.83ms  200   17 /req/1200/81
+180     +84.08s       +83.28s *    +83.28s 799.89ms  200 146K /seg_82_rate_1200
+182     +84.78s       +84.08s *    +84.08s 703.95ms  200 146K /seg_83_rate_1200
+ 91     +85.26s       +85.26s      +85.05s 202.78ms  200   17 /change/1500
+184     +85.52s       +84.79s *    +84.79s 735.90ms  200 146K /seg_84_rate_1200
+186     +86.44s       +85.52s *    +85.52s 915.93ms  200 183K /seg_85_rate_1500
+188     +87.36s       +86.44s *    +86.44s 919.90ms  200 183K /seg_86_rate_1500
+ 93     +88.26s       +88.26s      +88.05s 211.81ms  200   17 /change/1200
+190     +88.62s       +87.36s *    +87.36s    1.26s  200 183K /seg_87_rate_1500
+192     +90.40s       +88.62s *    +88.62s    1.78s  200 146K /seg_88_rate_1200
+ 95     +90.82s       +90.75s      +90.45s 363.77ms  200   16 /req/200/88
+196     +91.00s       +90.75s *    +90.75s 247.94ms  200  24K /seg_89_rate_200
+198     +91.24s       +91.00s *    +91.00s 235.92ms  200  24K /seg_90_rate_200
+ 97     +91.38s       +91.32s      +91.05s 326.81ms  200   16 /change/700
+200     +91.40s       +91.24s *    +91.24s 167.90ms  200  24K /seg_91_rate_200
+ 99     +92.35s       +92.34s      +92.05s 295.74ms  200   16 /change/900
+202     +92.46s       +92.06s *    +92.05s 407.91ms  200  85K /seg_92_rate_700
+204     +93.63s       +93.06s *    +93.05s 575.92ms  200 109K /seg_93_rate_900
+101     +93.76s       +93.76s      +93.65s 107.57ms  200   17 /change/1500
+206     +94.83s       +94.06s *    +94.05s 779.91ms  200 183K /seg_94_rate_1500
+208     +95.83s       +95.06s *    +95.05s 775.92ms  200 183K /seg_95_rate_1500
+210     +96.88s       +96.06s *    +96.05s 831.92ms  200 183K /seg_96_rate_1500
+212     +97.81s       +97.06s *    +97.05s 755.93ms  200 183K /seg_97_rate_1500
+214     +98.96s       +98.06s *    +98.05s 907.93ms  200 183K /seg_98_rate_1500
+216     +99.86s       +99.06s *    +99.05s 811.87ms  200 183K /seg_99_rate_1500
+218    +100.92s      +100.06s *   +100.05s 867.96ms  200 183K /seg_100_rate_1500
+ 13    +101.06s      +101.05s       +134us  101.06s  200  209 /file/900
+
+Our statistics: 
+Time 	Thrp 	Rate 	Buffer
+0.4	0	900	4.6	
+1.6	1927.19	900	4.4	
+2	1490.07	1500	5	
+3.4	1990.05	1200	4.6	
+4.7	2424.24	1500	4.3	
+5.8	2001.89	2000	4.2	
+6.9	2428.05	2000	4.1	
+8	1871.65	2000	4	
+9.2	1663.56	2000	3.8	
+9.9	1663.56	1500	4.1	
+10.7	2091.22	1500	4.3	
+11.8	2121.64	2000	4.2	
+12.9	2406.74	2000	4.1	
+14.1	1861.98	2000	3.9	
+15.4	1343.15	2000	3.6	
+15.5	1343.15	1500	4.5	
+17.2	1527.68	1200	3.8	
+18.1	1806.04	1500	3.9	
+19	1641.91	1500	4	
+19.7	1641.91	1500	4.3	
+20.6	2010.85	1500	4.4	
+21.8	2170.77	2000	4.2	
+22.9	2272.73	2000	4.1	
+23.8	2106.01	2000	4.2	
+24.9	2315.2	2000	4.1	
+25.8	2185.79	2000	4.2	
+27.2	1751.29	2000	3.8	
+28.5	963.474	1500	3.5	
+28.6	963.474	1500	4.4	
+29.6	1628.48	900	4.4	
+30.7	2052.64	1500	4.3	
+33.4	792.56	2000	2.6	
+33.5	792.56	2000	3.5	
+34.4	710.176	300	3.6	
+34.6	710.176	300	4.4	
+35.3	1468.19	700	4.7	
+36.5	2089.55	1200	4.5	
+37.9	2027.03	2000	4.1	
+38.8	2074.69	2000	4.2	
+39.7	2234.64	2000	4.3	
+40.7	2577.32	2000	4.3	
+42	2492.82	2500	4	
+43	2457.17	2500	4	
+43.8	2457.17	2000	4.2	
+45.1	1618.38	2000	3.9	
+46.2	1940.41	2000	3.8	
+46.9	1940.41	1500	4.1	
+47.6	2043.97	1500	4.4	
+48.9	2262.44	2000	4.1	
+49.9	2051.28	2000	4.1	
+50.8	2097.22	2000	4.2	
+51.8	2336.98	2000	4.2	
+52.7	2317.5	2000	4.3	
+53.8	2828.85	2000	4.2	
+55.3	1952.85	2500	3.7	
+55.4	1952.85	2500	4.6	
+58.2	910.072	1500	2.8	
+59.4	1037.87	1200	2.6	
+59.5	1037.87	1200	3.5	
+60.5	401.968	300	3.5	
+60.7	401.968	300	4.3	
+61.1	1255.23	300	4.9	
+62.5	2040.82	1200	4.5	
+63.8	2226.35	2000	4.2	
+64.7	2234.64	2000	4.3	
+65.7	2567.39	2000	4.3	
+66.9	2751.03	2500	4.1	
+68	2459.12	2500	4	
+69	2508.44	2500	4	
+69.8	2508.44	2000	4.2	
+70.9	2463.6	2500	4.1	
+72	2402.95	2500	4	
+73.1	2260.76	2500	3.9	
+74.4	1792.58	2000	3.6	
+75.7	1061.92	1500	3.3	
+75.8	1061.92	1500	4.2	
+76.7	1347.29	900	4.3	
+77.4	2212.02	1200	4.6	
+78.9	2526.32	2000	4.1	
+80.1	1703.73	2000	3.9	
+81.8	1388.53	2000	3.2	
+81.9	1388.53	1500	4.1	
+83.7	1493.1	1200	3.3	
+84.4	1656.95	1200	3.6	
+85.3	1740.41	1500	3.7	
+86.3	1608.98	1500	3.7	
+87.5	1340.16	1500	3.5	
+89.3	582.128	1200	2.7	
+89.4	582.128	1200	3.6	
+90.1	762.325	200	3.9	
+90.3	762.325	200	4.7	
+91.4	955.886	700	4.6	
+92.5	1750	900	4.5	
+93.7	1587.3	1500	4.3	
+94.7	1935.48	1500	4.3	
+95.8	1945.53	1500	4.2	
+96.7	1813.78	1500	4.3	
+97.9	1997.34	1500	4.1	
+98.8	1659.29	1500	4.2	
+99.8	1858.74	1500	4.2	
+
+Stream_id 	RTT
+13 	101.06s
+15 	263.64ms
+17 	159.88ms
+19 	167.75ms
+21 	107.69ms
+23 	126.78ms
+25 	139.61ms
+27 	239.66ms
+29 	234.93ms
+31 	211.73ms
+33 	159.79ms
+35 	190.81ms
+37 	175.82ms
+39 	187.78ms
+41 	107.69ms
+43 	511.57ms
+45 	270.78ms
+47 	239.80ms
+49 	107.69ms
+51 	139.79ms
+53 	170.76ms
+55 	262.77ms
+57 	127.80ms
+59 	163.78ms
+61 	266.79ms
+63 	287.60ms
+65 	579.78ms
+67 	215.81ms
+69 	103.65ms
+71 	135.82ms
+73 	115.69ms
+75 	115.84ms
+77 	202.53ms
+79 	254.79ms
+81 	126.91ms
+83 	203.75ms
+85 	107.63ms
+87 	234.74ms
+89 	383.83ms
+91 	202.78ms
+93 	211.81ms
+95 	363.77ms
+97 	326.81ms
+99 	295.74ms
+101 	107.57ms

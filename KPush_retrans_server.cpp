@@ -136,10 +136,12 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
     push->write_head(200);
     // push->end(file_generator("./real_cbr/"+std::to_string(segment_duration)+"ms/"+std::to_string(retrans_bitrate)));
-    push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+    // push->end(file_generator("./real_cbr/BBB/"+std::to_string(segment_duration)+"ms/"
+    //                           +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
+    //                          "s"+std::to_string(pushing_seg)+".m4s"));    
+    push->end(file_generator("https://d2x73z0q620alg.cloudfront.net/"+std::to_string(segment_duration)+"ms/"
                               +std::to_string(retrans_bitrate)+"/BigBuckBunny_"+std::to_string((int)segment_duration/1000)+
-                             "s"+std::to_string(pushing_seg)+".m4s"));    
-
+                             "s"+std::to_string(pushing_seg)+".m4s"));  
   }
   else{
 
@@ -378,14 +380,9 @@ int main(int argc, char *argv[]) {
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
   std::string port="3002";
-  std::cout << "Listening at the address: " << "172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  std::cout << "Listening at the address: 172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  std::cout << "Retransmission supported for H2BR" << std::endl;
   if (server.listen_and_serve(ec, "172.16.23.1", port)) {
     std::cerr << "error: " << ec.message() << std::endl;
   }
-
-
-  // if (server.listen_and_serve(ec, tls, "localhost", "3002")) {
-  //   std::cerr << "error: " << ec.message() << std::endl;
-  // }
-
 }
