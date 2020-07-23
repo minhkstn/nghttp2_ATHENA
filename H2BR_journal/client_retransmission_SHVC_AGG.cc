@@ -1,4 +1,4 @@
-/* LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./server_retransmission_HEVC
+/* MINH: for Modified AGG SVC ABR/*
  * nghttp2 - HTTP/2 C Library
  *
  * Copyright (c) 2013 Tatsuhiro Tsujikawa
@@ -47,7 +47,6 @@
 #include <sstream>
 #include <tuple>
 #include <vector>
-#include <time.h>
 
 #include <openssl/err.h>
 
@@ -73,9 +72,6 @@
 #ifndef O_BINARY
 #define O_BINARY (0)
 #endif // O_BINARY
-
-#define MAX(a, b) ((a) <= (b) ? (b) : (a))
-#define MIN(a, b) ((a) >= (b) ? (b) : (a))
 using namespace std;
 //using namespace boost::posix_time;
 namespace nghttp2 {
@@ -501,51 +497,116 @@ int submit_request(HttpClient *client, const Headers &headers, Request *req) {
 } // namespace
 
 // Hung: commons
-enum ABR {AGG, SARA, BBA};
-enum RETRANSMISSION_METHOD {NONE, PROPOSAL, SQUAD};
-enum est_thrp_mode  {LAST_THRP, LOWER_BOUND};
-enum TRACE_MODE     {TRACE_3G, TRACE_4G, TRACE_5G};
-const string ABR_STRING[] {
-  "AGG", "SARA", "BBA"
-};
-const string RETRANS_METHOD_STRING[] = {
-  "NONE", "PROPOSAL", "SQUAD"
-};
-const string H2BR_MODE_STRING[] = {
-  "STANDARD", "OPTIMIZATION"
-};
-const string TRACE_STRING[] = {
-  "3G", "4G", "5G"
-};
-TRACE_MODE              minh_trace_mode = TRACE_4G;
+enum ABR {AGGRESSIVE, SARA, BBA};
+enum RETRANSMISSION_METHOD {PROPOSAL, SQUAD};
 
-static double   start_play_time = 0;
-// static bool     stall_while_downloading = FALSE;
+// Minh ADD-S
+#define NUM_SEGMENTS    12
+#define MAX_SEGMENT_ID  300
+#define MAX_LAYER_ID    4   // 1 BL + 3 ELs
+#define TRUE            true
+#define FALSE           false
+
+#define MAX(a,b) ((a) >= (b) ? (a) : (b))
+#define MIN(a,b) ((a) <= (b) ? (a) : (b))
+
+const int   MINH_BITRATE_SET[NUM_SEGMENTS][MAX_LAYER_ID] = {
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000},  
+{1800,    3600,    3600,    9000}, 
+{1800,    3600,    3600,    9000}
+};   //Kbps
+
+static int   MINH_SUM_BITRATE_SET[NUM_SEGMENTS][MAX_LAYER_ID] = {0};
+// {2264, 5877, 9447, 18021}, // target bitrate: {1800, 5400, 9000, 18000}
+// {2270, 5883, 9402, 17969},
+// {2239, 5853, 9309, 17866},
+// {2247, 5862, 9365, 17935},
+// {2220, 5835, 9319, 17890},
+// {2222, 5836, 9376, 17943},
+// {2159, 5773, 9303, 17877},
+// {2155, 5740, 9067, 17665},
+// {2207, 5824, 9441, 18075},
+// {2245, 5859, 9471, 18063},
+// {2264, 5878, 9494, 18072},
+// {2227, 5815, 9418, 18002}
+// }; //Kbps
+
+struct Seg_layers   // a stream = 1 layer
+{
+   int              bitrate;
+   unsigned long    stream_id;
+   double           throughput;
+   double           buffer;
+
+   long double      start_download_time;
+   long double      end_download_time;
+   long double      download_time;
+};
+
+struct Segments
+{
+    int                 num_layers;
+    struct Seg_layers   layer[MAX_LAYER_ID];
+};
+
+struct Segments segment[MAX_SEGMENT_ID];
+
+int             minh_packet_loss = 0;
+int             retrans_seg_id_recorder [MAX_SEGMENT_ID];
+unsigned        terminate_stream_id_recorder [MAX_SEGMENT_ID];
+int             retrans_seg_id = 0;
+
+static int      sum_stall_num = 0;
+static double   sum_stall_duration = 0;
+static double   sum_avg_quality = 0;
+static int      sum_switch_num = 0;
+static double   sum_avg_switch = 0;
+
+static int      minh_client_seg = 0;
+static int      cur_layer_id = 1;
+static int      estimated_throughput = 0;
+static int      minh_retrans_seg = 0; // num of retrans. segments
+
+static long     last_stall_start_time = 0;
+
+static bool     termination_check = FALSE;
+static bool     stall_while_downloading = FALSE;
+static bool     retrans_enable = FALSE;
+
 static long     stall_duration_before_update = 0;
+static double   start_play_time = 0;
+std::vector<int>  terminated_seg_id;
 
+///////////////////////////////////////////////////////
 int       hung_sd = 1000; //ms
-int       hung_MAX_SEGMENTS = 300000/hung_sd;
+int       hung_max_seg_id_consideration = 300;
+int       hung_MAX_SEGMENTS = hung_max_seg_id_consideration;
 
-RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
-ABR                     minh_ABR = AGG;
-bool                    minh_retrans_extension = true;
-bool                    minh_optimize_bitrate = false;
-bool                    minh_rebuff_sent = false;
-int                     minh_retrans_data = 0;  // in kBytes
-int                     minh_next_data = 0;     // in kBytes
-int             num_success_retrans = 0;
-double          amount_waste_data = 0;
-
+const RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
+const ABR                     minh_ABR = AGGRESSIVE;
+const bool                    minh_retrans_extention = false;
+int                           buff_max = 0;       //20000 //15000 //10000 //5000       // 191103 this is max buffer size
+int                           MINH_REBUF_THRESHOLD_EXIT  = 0;     //15000 //10000 //6000  // 3000     //B_m; // this is used in algorithm. stop rebuffering for Aggressive ABR
+int                           hung_tar_buff = MINH_REBUF_THRESHOLD_EXIT;
 // SARA ABR -S
-const int I = 2*hung_sd; // act as the buffer enough to start playing
-const int B_a = 10*hung_sd;
-const int B_b = 15*hung_sd;
-const int B_m = 17*hung_sd;
+  const int I = 2*hung_sd; // act as the buffer enough to start playing
+  const int B_a = 10*hung_sd;
+  const int B_b = 15*hung_sd;
+  const int B_m = 17*hung_sd;
 
-long harmonic_sum_TS = 0;
-double harmonic_sum_MS = 0;
-int last_seg_data = 0;
-double SARA_buff_thres = 0;
+  long harmonic_sum_TS = 0;
+  double harmonic_sum_MS = 0;
+  int last_seg_data = 0;
+  double SARA_buff_thres = 0;
 // SARA ABR -E
 
 // BBA ABR -S
@@ -569,32 +630,47 @@ nghttp2_priority_spec hung_pri_spec;
 Headers               hung_headers;
 
 // Hung: measurement
-int               hung_tar_buff = -1; //B_m; // this is used in algorithm. stop rebuffering for AGG ABR
-int               buff_max = -1;  // 191103 this is max buffer size
-int               rebuff_buff_thres_L = 0; 
-int               rebuff_buff_thres_H = 0; 
-int               vod_buff_thres_L = 0;
-int               vod_buff_thres_H = 0;
-bool              hung_on_buffering = true;
-int               minh_cur_seg_id = 1;
-int               minh_max_next_seg_id = 0;
+// int               buff_max = 20000;       //20000 //15000 //10000 //5000       // 191103 this is max buffer size
+// int               hung_tar_buff = 15000;     //15000 //10000 //6000  // 3000     //B_m; // this is used in algorithm. stop rebuffering for Aggressive ABR
+// int               THETA = buff_max/2; // estimated buffer > THETA
+// int               RETRANS_BUFF_THRES = buff_max/4;
+
+int               minh_rebuff_exit = hung_tar_buff;
+
+// SVC-S
+int   RETRANS_BUFF_TRIGGER_ON = buff_max/2;
+int   RETRANS_BUFF_THRES = buff_max/4;
+int   THETA = buff_max/4; // estimated buffer > THETA
+//SVC-E
+
+int              rebuff_buff_thres_L = 0; 
+int              rebuff_buff_thres_H = 0; 
+int              vod_buff_thres_L = 0;
+int              vod_buff_thres_H = 0;
+bool             hung_on_buffering = true;
+
 
 // BBB video, SD = 1s
 std::vector<int> hung_rate_set_1s = {47, 92, 135, 182, 226, 270, 353, 425, 538, 621, 808, 1100, 1300, 1700, 2200, 2600, 3300, 3800, 4200, 4700}; // BBB video, SD = 1s
+
+// BBB video, SD = 2s
 std::vector<int> hung_rate_set_2s = {46, 89, 131, 178, 222, 263, 334, 396, 522, 595, 791, 1000, 1200, 1500, 2100, 2500, 3100, 3500, 3800, 4200}; // BBB video, SD = 2s
+
+// BBB video, SD = 4s
 std::vector<int> hung_rate_set_4s = {45, 89, 129, 177, 218, 256, 323, 378, 509, 578, 783, 1000, 1200, 1500, 2100, 2400, 2900, 3300, 3600, 3900}; //BBB video, SD = 4s
+
+// BBB video, SD = 6s
 std::vector<int> hung_rate_set_6s = {46, 89, 128, 177, 218, 255, 321, 374, 506, 573, 780, 1000, 1200, 1500, 2100, 2400, 2900, 3300, 3600, 3900}; // BBB video, SD = 6s
 
-// HEVC RaceNight video, SD = 1s
-std::vector<int> HEVC_RaceNight_1s = {1800, 5400, 9000, 18000}; // HEVC video, SD = 1s
+std::vector<int> hung_rate_set = {1, 2, 3, 4, 5, 6, 7 ,8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}; 
 
-std::vector<int> hung_rate_set;// = {1, 2, 3, 4, 5, 6, 7 ,8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}; 
-
-double           hung_inst_thrp = 1000;
+double           hung_inst_thrp = 0;
 int              hung_cur_buff = 0; 
+
+
 double           hung_safety_margin = 0.1;
 
-/* 191028 Minh [streaming for retransmission] ADD-S*/
+/* 191028 Minh [live streaming for retransmission] ADD-S*/
 bool                retrans_check = false;
 bool                retrans_received = true;
 bool                retrans_transmitting = false; // = false if NO reretransmitting or retransmitted the last seg_id
@@ -602,16 +678,15 @@ bool                retrans_transmitting_period = false;  // = false if no retra
 bool                termination_trigger = false;
 bool                termination_finish = true;
 bool                playout_start = false;
-bool                rebuffering_while_download = false;
 
 long                playout_start_time = 0;
 
 
-int                 rebuf_num = 0;
+int                 rebuf_num = -1;
 
 int                 retrans_next_id = 0;
 int                 retrans_rate = 0;
-int                 retrans_num = 1;
+int                 retrans_num = 0;
 int                 retrans_retransmitted_seg_id = 0;
 int                 retrans_num_termination = 0;
 double              retrans_avgBuffer = 0;
@@ -627,14 +702,16 @@ int                 retrans_switch_thres = 0;
 bool                buffering_just_stop = false;
 std::vector<double> retrans_buffer_recorder;
 
+
+
 bool                minh_retrans_trigger = false;
-int                 minh_rebuff_exit = 0;
+
 int                 pri_new_rate = 1;
 int                 pri_retrans_rate = 1;
 
 int                 next_num = 1;
 
-std::vector<int>    minh_rate_recorder; // record the bitrate of
+std::vector<int>    minh_rate_recorder;
 std::vector<int>    retrans_retransmitted_seg_recorder;
 std::vector<int>    minh_next_num_recorder;
 std::vector<int>    minh_retrans_num_recorder;
@@ -643,20 +720,12 @@ std::vector<int>    minh_thrp_measured_recorder;
 std::vector<int>    minh_rate_old_id_recorder;
 std::vector<int>    minh_rate_ret_id_recorder;
 std::vector<int>    minh_rebuff_duration_recorder;
-std::vector<int>    minh_retrans_terminated_seg_recorder;
-
-std::vector<int>    minh_data_downloaded_recorder; // data of each segment at the firt download time (not after retransmission)
-// for stall event
-std::vector<int>    minh_stall_start_time;
-std::vector<int>    minh_stall_end_time;
-double              stall_duration = 0;
 
 long                minh_rebuff_start = 0;
 int                 minh_rebuff_duration = 0;
 
 int                 needed_retrans_seg_id = 0; // count segment id from 1
 bool                found_rates = false;
-int                     minh_packet_loss = 0;
 
 nghttp2_data_provider *dang_data_prd;
 int64_t               dang_data_length;
@@ -664,7 +733,7 @@ Headers               dang_headers;
 std::string           dang_uri;
 nghttp2_priority_spec dang_pri_spec;
 
-std::vector<int>      retrans_seg_id_recorder;
+// std::vector<int>      retrans_seg_id_recorder;
 double                thrp_est = 0;
 double                division_retrans_seg_margin = 0.05;
 double                division_retrans_buff_margin = 0;
@@ -690,12 +759,18 @@ int                   squad_buff_low = 100000;
 double                squad_retrans_start_time = 0;
 
 int                   next_num_remaining = 1;
-int                   retrans_num_remaining = 0;
 
 int                   sub_downloaded_data = 0;
 bool                  sub_whole_occupy_check = false;
 int                   sub_start_time = 0;
 int                   sub_download_duration = 0;
+
+
+// const double          BBA_a = 1.0*(hung_rate_set.at(hung_rate_set.size()-1) - hung_rate_set.at(0))/(BBA_cu);
+// const double          BBA_b = hung_rate_set.at(0) - 1.0*BBA_r*BBA_a;
+// std::vector<double>   bandwidth_ratio_LUT = {0.0, 1.0, 2.0, 3.1, // 0 1 2 3
+//                                                3.8, 5.0, 5.3, 5.4, // 4 5 6 7
+//                                                5.6, 5.7, 5.8, 6.0}; //8 9 10 11
 
 long                  sub_seg_recv_data = 0; 
 double                minh_instant_thrp = 0; 
@@ -704,27 +779,33 @@ long                  sub_last_time = 0;
 bool                  first_seg_frame = true; 
 long                  sub_cummulate_seg_recev_data = 0;  
 
+std::vector<double>   bandwidth_ratio_LUT = {0.0, 1.0, 2.0, 2.5, // 0 1 2 3
+                                               2.5, 4, 4, 3.7, // 4 5 6 7
+                                               4, 4, 4, 4}; //8 9 10 11
+
 std::vector<double>   minh_pri_proportion_recorder;
 double                minh_cur_thrp;
-const double          minh_smooth_thrp_margin = 0.125;  // as rcommended in M. Sargent, M. Allman, and V. Paxson, “Computing TCP’s Retransmission Timer,” RFC 2988 (2011).
+const double          minh_smooth_thrp_margin = 0.125;
 double                smoothedBW = 0;
 
 bool                  squad_decr_flag = 0;
-/* 191028 Minh [streaming for retransmission] ADD-E*/
+enum est_thrp_mode {LAST_THRP, LOWER_BOUND};
+enum TRACE_MODE {TRACE_3G, TRACE_4G};
+/* 191028 Minh [live streaming for retransmission] ADD-E*/
 
 
 enum Adaptation_method { AP, ATL, KPush };
 Adaptation_method    hung_method = KPush;
 int                  hung_cur_rtt = 50;     // ik1 => 220ms
 int                  hung_K = 2;
-int                  num_of_request=1;
+int num_of_request=1;
 
 // Hung: recorders
 std::vector<int>     hung_seg_recorder;
 std::vector<int>     hung_time_recorder;
-std::vector<int>     hung_rate_recorder;  // record the final bitrate
+std::vector<int>     hung_rate_recorder;
 std::vector<double>  hung_thrp_recorder;
-std::vector<int>     hung_buff_recorder;  // in ms
+std::vector<int>     hung_buff_recorder;
 std::vector<int>     dang_buffer_est;
 std::vector<double>  muy_recorder;
 std::vector<double>  time_download_recorder;
@@ -738,27 +819,8 @@ int switch_down_greater_3 = 0;
 int total_size = 0, total_time = 0;
 int D = 30;
 //hung's method
+ 
 
-// string minh_get_ABR_name (ABR m_ABR){
-//   switch(m_ABR){
-//     case AGG:
-//       return "AGG";
-//       break;
-//     case SARA:
-//       return "SARA";
-//       break;
-//     case BBA:
-//       return "BBA";
-//       break;
-//     default:
-//         std::cerr << "[ERR] Minh: no ABR available. Imported ABR: "
-//                   << m_ABR << ". Range of ABR: " << first_ABR << " - " << last_ABR
-//                   << std::endl;
-//         exit(EXIT_FAILURE);
-//       return to_string(m_ABR);
-//       break;
-//   }
-// }
 // Hung: get rate and seg# from the uri
 int hung_get_rate_from_uri (std::string uri) {
   return std::stoi(uri.substr(uri.rfind('_') + 1));
@@ -2102,6 +2164,7 @@ int on_header_callback(nghttp2_session *session, const nghttp2_frame *frame,
   if (config.verbose) {
     verbose_on_header_callback(session, frame, name, namelen, value, valuelen,
                                flags, user_data);
+    // std::cout << "\n\t[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
   }
 
   switch (frame->hd.type) {
@@ -2159,26 +2222,12 @@ int on_header_callback(nghttp2_session *session, const nghttp2_frame *frame,
     break;
   }
   }
+  // std::cout << "\n\t[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
   return 0;
 }
 } // namespace
 
 namespace {
-// [20.06.30] update termination logic ADD-E
-bool check_termination(int max_data, int downloaded_data, double t_avai, double thrp, int pri, int pri_sum){
-  double allocated_thrp = thrp*(pri/pri_sum); // kbit/s
-  std::cout << "Check termination" << '\n'
-            << "max data (kbit): " << max_data << '\n'
-            << "data downloaded (kbit): " << downloaded_data << '\n'
-            << "thrp: " << thrp << std::endl;
-  if (t_avai < (max_data - downloaded_data)/(allocated_thrp/8)){
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-// [20.06.30] update termination logic ADD-E
 int on_frame_recv_callback2(nghttp2_session *session,
                             const nghttp2_frame *frame, void *user_data) {
   int rv = 0;
@@ -2200,138 +2249,54 @@ int on_frame_recv_callback2(nghttp2_session *session,
     if (frame->hd.length > 0){
             
       sub_downloaded_data += frame->hd.length;
-      long m_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                   get_time() - client->timing.connect_end_time).count();
-      // std::cout << "~~~~~ the whole response length will be: " << req->response_len << std::endl;
-      if (retrans_transmitting){ // if retransmitting
+      if (retrans_transmitting){ // neu if retransmitting
         int m_seg_idx = hung_get_seg_from_uri(req->make_reqpath());
         int m_rate = hung_get_rate_from_uri(req->make_reqpath());
-        int m_buff_length = hung_buff_recorder.size();
         
+        long m_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   get_time() - client->timing.connect_end_time).count();
         double m_inst_buff = hung_cur_buff - (m_download_time - hung_last_adapt_time); //ms
 
-        if (m_seg_idx < minh_max_next_seg_id){
+        if (m_seg_idx == retrans_seg_id){
           retrans_stream_id = frame->hd.stream_id;
-          double m_retrans_buff = m_seg_idx*hung_sd + minh_rebuff_duration + start_play_time - m_download_time;
-
-          if (minh_retransmission_method == PROPOSAL){
-            // [20.06.30] update termination logic MOD-S
-            #if 1
-            if (m_retrans_buff < 100 && !termination_trigger){ // RST_STREAM
-            #else
-            if (check_termination(minh_retrans_data, req->response_len/1000,
-                                  m_retrans_buff*0.9, MAX((double) sub_downloaded_data*8*1000/(m_download_time - sub_start_time),hung_inst_thrp),
-                                  pri_retrans_rate, (pri_retrans_rate+pri_new_rate))){
-            #endif
-            // [20.06.30] update termination logic AMODDD-E
-              std::cout << "retrans_segment_id: " << m_seg_idx << '\t'
-                        << "its playout time: " << m_seg_idx*hung_sd + minh_rebuff_duration + start_play_time << '\t'
-                        << "current time: " << m_download_time << std::endl;
-
-              std::cout << ":::::::::::::::::: TERMINATION :::::::::::::::::: m_retrans_buff "<<m_retrans_buff << std::endl; 
-              // minh_terminate_segment(client);
-              minh_retrans_terminated_seg_recorder.push_back(m_seg_idx);
-              retrans_num_termination ++;
-              termination_trigger = true;
-              termination_finish = false;
-              minh_retrans_trigger = false; 
-              
-              retrans_transmitting = false;
-              retrans_transmitting_period = false;
-              retrans_num_remaining = 0;
-
-              nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
-                                        retrans_stream_id, NGHTTP2_CANCEL);            
-            }            
-          }
-          else if (minh_retransmission_method == SQUAD){
-            retrans_stream_id = frame->hd.stream_id;
-            double m_retrans_buff = m_seg_idx*hung_sd + minh_rebuff_duration + start_play_time - m_download_time;
-            long  m_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                   get_time() - req->timing.response_start_time).count();
-            double m_response_len = req->response_len/125; //kbit
-            double m_instant_thrp = m_response_len*1.0/m_download_time; //kbit/ms
-
-            if(m_retrans_buff < 1.5*(retrans_rate - m_response_len)/m_instant_thrp && !termination_trigger){
-              std::cout << "retrans_segment_id: " << m_seg_idx << '\t'
-                        << "its playout time: " << m_seg_idx*hung_sd + minh_rebuff_duration + start_play_time << '\t'
-                        << "current time: " << m_download_time << std::endl;
-
-              std::cout << ":::::::::::::::::: TERMINATION SQUAD :::::::::::::::::: m_retrans_buff "<<m_retrans_buff << " m_response_len: " << m_response_len << std::endl; 
-              // minh_terminate_segment(client);
-              minh_retrans_terminated_seg_recorder.push_back(m_seg_idx);
-              retrans_num_termination ++;
-              termination_trigger = true;
-              termination_finish = false;
-              minh_retrans_trigger = false; 
-              
-              retrans_transmitting = false;
-              retrans_transmitting_period = false;
-              retrans_num_remaining = 0;
-
-              nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
-                                        frame->hd.stream_id, NGHTTP2_CANCEL);
-            }
-          }
+          double t_avai = retrans_seg_id*hung_sd + sum_stall_duration + start_play_time
+                                    - m_download_time; //(retrans_seg_id - minh_client_seg)*hung_sd + m_inst_buff;
+          
+          if (t_avai < 100 && !termination_trigger)
+          { // RST_STREAM
+            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINATION ~~~~~~~~~~~~~~~~ m_retrans_buff "<< t_avai  << " retrans_seg: " << retrans_seg_id << std::endl; 
+            retrans_num_termination ++;
+            termination_trigger = true;
+            termination_finish = false;
+            minh_retrans_trigger = false; 
+            
+            retrans_transmitting = false;
+            // retrans_transmitting_period = false;           
+            nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
+                                      frame->hd.stream_id, NGHTTP2_CANCEL);   
+            terminated_seg_id.push_back(retrans_seg_id);                                           
+          }              
         }
         else
         {
-          if (minh_retransmission_method == PROPOSAL){
-            // [20.06.30] wrong DEL-S
-            #if 0
-            double m_inst_buff = hung_buff_recorder.at(m_buff_length-1) - m_download_time; //ms
-            #endif
-            // [20.06.30] wrong DEL-E
-            // [20.06.30] update termination logic MOD-S
-            #if 1
-            if (m_inst_buff < retrans_buff_thres)
-            { // RST_STREAM .
-              #else
-              double t_next_avai = hung_cur_buff - MAX(hung_sd*(1+0.1), buff_max/4);
-              if (check_termination(minh_next_data, req->response_len/1000,
-                                    t_next_avai, MAX((double) sub_downloaded_data*8*1000/(m_download_time - sub_start_time), hung_inst_thrp),
-                                    pri_new_rate, (pri_retrans_rate+pri_new_rate))){
-              #endif
-              // [20.06.30] update termination logic MOD-E
-              std::cout << ":::::::::::::::::: TERMINATION :::::::::::::::::: retrans_stream_id "<<retrans_stream_id 
-                        << " current stream id "  << frame->hd.stream_id << std::endl; 
-              // minh_terminate_segment(client);
-              retrans_num_termination ++;
-              termination_trigger = true;
-              termination_finish = false;
-              minh_retrans_trigger = false; 
-              
-              retrans_transmitting = false;
-              retrans_transmitting_period = false;
-              retrans_num_remaining = 0;
-              nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
-                                        retrans_stream_id, NGHTTP2_CANCEL);            
-            }            
-          }
-          else if (minh_retransmission_method == SQUAD){
-            //////////////
-          }  
+          if (m_inst_buff < RETRANS_BUFF_THRES && !termination_trigger){ // RST_STREAM . 
+            std::cout << "~~~~~~~~~~~~~~~~~ TERMINATION ~~~~~~~~~~~~~~~~ retrans_stream_id "<<retrans_stream_id 
+                      << " current stream id "  << frame->hd.stream_id << std::endl; 
+            // minh_terminate_segment(client);
+            retrans_num_termination ++;
+            termination_trigger = true;
+            termination_finish = false;
+            minh_retrans_trigger = false; 
+            
+            retrans_transmitting = false;
+            // retrans_transmitting_period = false;           
+            nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
+                                      retrans_stream_id, NGHTTP2_CANCEL);  
+            terminated_seg_id.push_back(retrans_seg_id);       
+          }            
         }          
       }
-      // [20.06.25] * Stall timestamp determination * ADD-S
-      if (!rebuffering_while_download && hung_cur_buff < 2*hung_sd){
-        int inst_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  get_time() - req->timing.response_start_time).count();
-        int inst_buff = minh_max_next_seg_id*hung_sd + minh_rebuff_duration + start_play_time - m_download_time;
-
-        if (inst_buff <= 0 && !hung_on_buffering){
-          int now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    get_time() - client->timing.connect_end_time).count();          
-          minh_rebuff_sent = false;
-          rebuffering_while_download = true;
-          hung_cur_buff = 0;
-          minh_stall_start_time.push_back(now + inst_buff);
-          minh_rebuff_start = now + inst_buff;
-          // rebuf_num ++;
-          std::cout << "\n\t[MINH] INFO: ON RECEIVING REBUFFERING from " << now + inst_buff << "ms rebuf_num: " << rebuf_num << std::endl; 
-        }      
-      }
-      // [20.06.25] * Stall timestamp determination * ADD-S
+      
     }
 /*191113 minh measure throughput while using priority ADD-E*/  
     if (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
@@ -2424,16 +2389,10 @@ int on_frame_recv_callback2(nghttp2_session *session,
     req->uri = uri;
     req->u = u;
 
-    if (client->path_cache.count(uri)) {  // if this request has already been sent.
-      // [20.06.29] Fix error unexpected termination MOD-S
-      std::cout << "[WARNING] this request has already been sent." << "URI: " << uri << std::endl;
-      std::cout << "[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
-      #if 0
+    if (client->path_cache.count(uri)) {
       nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE,
                                 frame->push_promise.promised_stream_id,
                                 NGHTTP2_CANCEL);
-      #endif
-      // [20.06.29] Fix error unexpected termination MOD-E 
       break;
     }
 
@@ -2528,43 +2487,82 @@ int hung_compute_max_adapted_rate (double thrp) {
   return rate_candidate;
 }
 
+static void
+delay( int milli_seconds)
+{
+    clock_t start_time = clock();
+
+    while(clock() < start_time + milli_seconds)
+        ;
+}
+
 // Hung: rebufferring phase
-void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
-  std::cout << "[INFO]" << __func__ << "()" << std::endl;
+void hung_req_vod_rebuff(HttpClient *client, int segment_id, bool submit = true) {
   rebuf_num ++;
-  minh_rebuff_sent = true;
-  int num_of_segs = rebuff_buff_thres_L/hung_sd;
 
-  if (num_of_segs*hung_sd < rebuff_buff_thres_L)
-      num_of_segs ++;
+  int num_of_segs = 1;
 
-  if (rebuffering_while_download){
-    std::cout << "\t [INFO] " << __func__<< "(): line " << __LINE__ << std::endl;
-    num_of_segs -= hung_cur_buff/hung_sd;
-    rebuffering_while_download= false;
-  }
+  // if (num_of_segs* hung_sd < rebuff_buff_thres_L)
+  //     num_of_segs ++;
 
-  if (minh_max_next_seg_id + num_of_segs > hung_MAX_SEGMENTS) {
-    num_of_segs = hung_MAX_SEGMENTS - minh_max_next_seg_id - 1;
-  }
-  if (num_of_segs <= 0){
-    std::cerr << "[ERROR] No of requested segment (< 0): " << num_of_segs << std::endl;
-    return;
-  }
+  // if (hung_sys_time / hung_sd + num_of_segs > hung_MAX_SEGMENTS) {
+  //   num_of_segs = hung_MAX_SEGMENTS - hung_sys_time / hung_sd - 1;
+  // }
   
-  std::string rate_string =  std::to_string(hung_rate_set.at(0));
+  std::string seg_string = std::to_string(segment_id);
+  std::string rate_string =  std::to_string(1);
   std::string num_string = std::to_string(num_of_segs);
 
-  // if (client->add_request(hung_uri+"/rebuff/bitrate="+rate_string+"/num="+num_string, 
-  //                           dang_data_prd, dang_data_length, dang_pri_spec)) {
-  if (client->add_request(hung_uri+"/rebuff/sd="+std::to_string(hung_sd)+
-                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id), 
-                          dang_data_prd, dang_data_length, dang_pri_spec)) {
-    /* request example: ip:port/rebuff/sd=1000/bitrate=1000/num=4/start_seg=10 
-    ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
-    */
+  if (client->add_request(hung_uri+"/rebuff/segment="+seg_string+"/bitrate="+rate_string+"/num="+num_string, 
+                            dang_data_prd, dang_data_length, dang_pri_spec)) {
     if (submit) {
-      if(hung_cur_buff > rebuff_buff_thres_H){
+      if(hung_cur_buff > buff_max && !retrans_transmitting){
+        double temp_before = std::chrono::duration_cast<std::chrono::microseconds>(
+                 get_time() - client->timing.connect_end_time).count()/1000;
+        
+        usleep((hung_cur_buff - buff_max)*1000);
+        double temp_after = std::chrono::duration_cast<std::chrono::microseconds>(
+                 get_time() - client->timing.connect_end_time).count()/1000;
+        std:cout << "\t\t======== SLEEP: cur_buf: " << hung_cur_buff << " an sleep in " << (hung_cur_buff - buff_max) << " ms "
+                 << "from "<< temp_before << " to "<< temp_after << std::endl;
+        // usleep((hung_cur_buff - rebuff_buff_thres_H) * 1000);
+      }
+      submit_request(client, hung_headers, client->reqvec.back().get());
+      num_of_request++;
+      sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                 get_time() - client->timing.connect_end_time).count();
+    }
+  }
+
+  std::cout << "[REBUFF] Segment " << segment_id << " bitrate " << rate_string << "\tnum " << num_string 
+                            << std::endl << std::endl;  
+
+  if (submit) client->signal_write();
+}
+
+void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
+  rebuf_num ++;
+
+  int num_of_segs = 1;
+
+  // if (num_of_segs* hung_sd < rebuff_buff_thres_L)
+  //     num_of_segs ++;
+
+  // if (hung_sys_time / hung_sd + num_of_segs > hung_MAX_SEGMENTS) {
+  //   num_of_segs = hung_MAX_SEGMENTS - hung_sys_time / hung_sd - 1;
+  // }
+  
+  // std::string seg_string = std::to_string(segment_id);
+  std::string rate_string =  std::to_string(1);
+  std::string num_string = std::to_string(num_of_segs);
+
+  if (client->add_request(hung_uri+"/rebuff/bitrate="+rate_string+"/num="+num_string, 
+                            dang_data_prd, dang_data_length, dang_pri_spec)) {
+    if (submit) {
+      if(hung_cur_buff > buff_max ){
+        std:cout << "\t\t======== SLEEP: cur_buf: " << hung_cur_buff <<" an sleep in "<<(hung_cur_buff - buff_max+1000)<<" ms\n" << std::endl;
+        // usleep(hung_cur_buff - buff_max  + 1000);
+
         usleep((hung_cur_buff - rebuff_buff_thres_H) * 1000);
       }
       submit_request(client, hung_headers, client->reqvec.back().get());
@@ -2582,11 +2580,12 @@ void hung_req_vod_rebuff(HttpClient *client, bool submit = true) {
 
 // Hung: change the bitrate without refusing the stream
 // Note that we disable adaptation until a new segment is fully received
-void hung_req_vod_rate(HttpClient *client, int new_rate) {
-  int num_of_segs = next_num;  
+void hung_req_vod_rate(HttpClient *client, int segment_id, int new_rate) {
+  int num_of_segs = 1;
 
-  if (minh_max_next_seg_id + num_of_segs > hung_MAX_SEGMENTS)
-    num_of_segs = hung_MAX_SEGMENTS - minh_max_next_seg_id;
+
+  if (hung_client_seg + num_of_segs > hung_MAX_SEGMENTS)
+    num_of_segs = hung_MAX_SEGMENTS - hung_client_seg - 1;
   if (num_of_segs <= 0){
     std::cout << "*********************************** k <=0 **************************************************" << std::endl; 
     return;
@@ -2594,24 +2593,53 @@ void hung_req_vod_rate(HttpClient *client, int new_rate) {
 
   std::string rate_string = std::to_string(new_rate);
   std::string num_string = std::to_string(num_of_segs);
-  std::string url = hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
-                          "/bitrate="+rate_string+"/num="+num_string+"/start_seg="+std::to_string(minh_cur_seg_id);
-  std::cout << "\tNEXT url: " << url << std::endl;                          
-  if (client->add_request(url, dang_data_prd, dang_data_length, dang_pri_spec)) {
-    /* request example: ip:port/req_vod/sd=1000/bitrate=1000/num=4/start_seg=10 
-    ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
-    */
-  // if (client->add_request(hung_uri+"/req_vod/bitrate="+rate_string+"/num="+num_string, 
-  //                           dang_data_prd, dang_data_length, dang_pri_spec)) {
-    if(hung_cur_buff > vod_buff_thres_H){
+  std::string seg_string = std::to_string(segment_id);
+
+  if (client->add_request(hung_uri+"/req_vod/segment="+seg_string+"/bitrate="+rate_string+"/num="+num_string, 
+                            dang_data_prd, dang_data_length, dang_pri_spec)) {
+    if(hung_cur_buff > buff_max){ // && !retrans_transmitting){
       double temp_before = std::chrono::duration_cast<std::chrono::microseconds>(
+                 get_time() - client->timing.connect_end_time).count();
+        
+        usleep((hung_cur_buff - buff_max)*1000);
+        double temp_after = std::chrono::duration_cast<std::chrono::microseconds>(
                  get_time() - client->timing.connect_end_time).count()/1000;
-
-      std:cout << "\t\t======== SLEEP: cur_buf: " << hung_cur_buff << " an sleep in " << (hung_cur_buff - vod_buff_thres_H) << " ms "
-               << "from "<< temp_before << std::endl;
-
-      usleep((hung_cur_buff - vod_buff_thres_H) * 1000);
+        std:cout << "\t\t======== SLEEP: cur_buf: " << hung_cur_buff << " an sleep in " << (hung_cur_buff - buff_max) << " ms "
+                 << "from "<< temp_before << " to "<< temp_after << std::endl;
     }
+    submit_request(client, hung_headers, client->reqvec.back().get());
+    num_of_request++;
+    sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                 get_time() - client->timing.connect_end_time).count();  
+  }
+
+  std::cout << "\t[REQUEST NEW] Segment: " << seg_string << " bitrate " << rate_string << "\tnum " << num_string 
+                            << std::endl << std::endl;  
+
+  client->signal_write();
+}
+
+void hung_req_vod_rate(HttpClient *client, int new_rate) {
+  int num_of_segs = next_num;
+
+
+  if (hung_client_seg + num_of_segs > hung_MAX_SEGMENTS)
+    num_of_segs = hung_MAX_SEGMENTS - hung_client_seg - 1;
+  if (num_of_segs <= 0){
+    std::cout << "*********************************** k <=0 **************************************************" << std::endl; 
+    return;
+  }
+
+  std::string rate_string = std::to_string(new_rate);
+  std::string num_string = std::to_string(num_of_segs);
+
+  if (client->add_request(hung_uri+"/req_vod/bitrate="+rate_string+"/num="+num_string, 
+                            dang_data_prd, dang_data_length, dang_pri_spec)) {
+    if(hung_cur_buff > vod_buff_thres_H){
+      // std::cout << "Curr buffer" << hung_cur_buff << " -- WAITING for " << (hung_cur_buff-vod_buff_thres_H) << "ms" << std::endl;
+       //std::this_thread::sleep_for;
+        usleep((hung_cur_buff - vod_buff_thres_H) * 1000);
+      }
     submit_request(client, hung_headers, client->reqvec.back().get());
     num_of_request++;
     sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -2624,40 +2652,6 @@ void hung_req_vod_rate(HttpClient *client, int new_rate) {
   client->signal_write();
 }
 
-// Hung: KPush method. Note that the way to compute the throughput is totally different segment thrp
-// So, the Push-1 is different from HTTP/1.1-based method
-// void hung_KPush_method (HttpClient *client) {
-//   std::cout << std::endl << "[ADAPTATION] Invoke at time " << hung_sys_time << "ms \t Thrp: " 
-//                            << (int)hung_inst_thrp << "kbps \t Buff: "<< hung_cur_buff << "ms" << std::endl;
-
-//   if (hung_cur_buff <= hung_sd) {
-//     hung_on_buffering = true;
-//     hung_cur_buff = 0;
-//     hung_req_vod_rebuff(client);
-//     return;
-//   } 
-
-//   if (hung_on_buffering && hung_cur_buff == hung_tar_buff) {
-//     hung_on_buffering = false;
-//   }
-
-//   int cur_index = hung_thrp_recorder.size()-1;
-//   double sum = 0; int count = 0;
-//   for (int i = cur_index; i > cur_index - 3; i--) 
-//     if (i >= 0) { 
-//       sum += hung_thrp_recorder.at(i); 
-//       count++;
-//     }
-//   double avg_thrp = sum / count;
-
-//   double avg_thrp_with_RTT = avg_thrp * (hung_K * hung_sd - hung_cur_rtt) / (hung_K * hung_sd);
-//   // cannot use the segment throughput until we compute a rtt
-
-//   double avail_thrp = (1 - hung_safety_margin) * hung_inst_thrp; 
-//   int rate_candidate = hung_compute_max_adapted_rate (avail_thrp);
- 
-//   hung_req_vod_rate(client, rate_candidate);
-// }
 int getIndexByRate(int rate){
   for(int i=0;i<hung_rate_set.size();i++){
     if(rate==hung_rate_set.at(i))
@@ -2666,23 +2660,19 @@ int getIndexByRate(int rate){
   return -1;
 }
 /* 191028 Minh [live streaming for retransmission] ADD-S*/
-
 void minh_get_rate_set(int m_hung_sd){
+  std::cout << " *********************************** NON-SCALABLE VIDEOS. SD = " << m_hung_sd/1000 << "s *********************************** " << std::endl;
   switch (m_hung_sd){
     case 1000 :
-      std::cout << " *********************************** Segment duration = 1s *********************************** " << std::endl;
-      hung_rate_set = HEVC_RaceNight_1s; //hung_rate_set_1s;
+      hung_rate_set = hung_rate_set_1s;
       break;
     case 2000 :
-      std::cout << " *********************************** Segment duration = 2s *********************************** " << std::endl;
       hung_rate_set = hung_rate_set_2s;
       break;
     case 4000 :
-      std::cout << " *********************************** Segment duration = 4s *********************************** " << std::endl;
       hung_rate_set = hung_rate_set_4s;
       break;
     case 6000 :
-      std::cout << " *********************************** Segment duration = 6s *********************************** " << std::endl;
       hung_rate_set = hung_rate_set_6s;
       break;                  
   }
@@ -2693,11 +2683,30 @@ void minh_get_rate_set(int m_hung_sd){
   std::cout << " \n*************************************************************** " << std::endl;
 }
 
+void minh_get_rate_set(int m_hung_sd, bool video_type){
+  if (video_type){  // scalable videos
+    std::cout << " *********************************** SCALABLE VIDEOS. SD = " << m_hung_sd/1000 << "s *********************************** " << std::endl;
+    for (int i = 0; i < NUM_SEGMENTS; i ++){
+      for (int j = 0; j < MAX_LAYER_ID; j++){
+        if (j == 0)
+          MINH_SUM_BITRATE_SET[i][j] = MINH_BITRATE_SET[i][j];
+        else
+          MINH_SUM_BITRATE_SET[i][j] = MINH_SUM_BITRATE_SET[i][j-1] + MINH_BITRATE_SET[i][j];
+        std::cout << MINH_SUM_BITRATE_SET[i][j] << '\t';
+      }
+      std::cout << '\n';
+    }
+  }
+  else{ // non-scalable videos
+    minh_get_rate_set(m_hung_sd);
+  }
+}
+
 void minh_get_ABR_parameters(ABR m_ABR){
   switch (minh_ABR){
-    case AGG:
-      hung_tar_buff = 16000;
-      buff_max       = 20000;
+    case AGGRESSIVE:
+      // hung_tar_buff = 16000;
+      // buff_max       = 20000;
       minh_rebuff_exit = hung_tar_buff;
 
       rebuff_buff_thres_L = hung_tar_buff;
@@ -2706,14 +2715,14 @@ void minh_get_ABR_parameters(ABR m_ABR){
       vod_buff_thres_L = hung_tar_buff;
       vod_buff_thres_H = buff_max;  
 
-      std::cout << "************ ABR: AGG **********" << '\n'
+      std::cout << "************ ABR: AGGRESSIVE **********" << '\n'
                 << "hung_tar_buff: " << hung_tar_buff << '\n'
                 << "buff_max: " << buff_max << '\n'
                 << std::endl;  
       break;
     case SARA:
       hung_tar_buff    = B_a;
-      buff_max         = B_m;
+      // buff_max         = B_m;
       minh_rebuff_exit = I;
 
       rebuff_buff_thres_L = I;
@@ -2729,7 +2738,7 @@ void minh_get_ABR_parameters(ABR m_ABR){
       break;
     case BBA:
       hung_tar_buff    = BBA_r + BBA_cu;
-      buff_max         = BBA_Max;    
+      // buff_max         = BBA_Max;    
       minh_rebuff_exit = BBA_r;
 
       rebuff_buff_thres_L = BBA_r;
@@ -2748,10 +2757,11 @@ void minh_get_ABR_parameters(ABR m_ABR){
       std::cout << "*************** DEFAULT ABR **************" << std::endl;
       break;      
   } 
-  retrans_buff_trigger_on = buff_max/2;
   retrans_buff_thres = buff_max/4;
-  retrans_buff_cancel = buff_max/4;    
-  duc_buff_low = hung_tar_buff/2;
+  retrans_buff_trigger_on = buff_max/2;
+  retrans_buff_cancel = buff_max/4;   
+  RETRANS_BUFF_TRIGGER_ON = buff_max/2;
+
 
   squad_buff_high = retrans_buff_trigger_on;
   squad_buff_low = retrans_buff_thres;  
@@ -2795,7 +2805,6 @@ int Duc_K_determination(){
     }
   }
   
-  std::cout << "[K-PUSH] next num: " << temp << std::endl;
   return temp;
 }
 
@@ -2819,61 +2828,98 @@ void minh_terminate_segment(HttpClient *client){
   std::cout << "-------------------------- TERMINATE_RETRANSMISSION --------------------------" << std::endl;
 }
 
-void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, int pri_new_rate, int pri_retrans_rate, int needed_retrans_seg_id, int m_retrans_num, int m_next_num, bool submit=true){
+// void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, int pri_new_rate, int pri_retrans_rate, int needed_retrans_seg_id, int m_retrans_num, int m_next_num, bool submit=true){
+//     //int curr_bitrate = hung_rate_recorder.at(hung_rate_recorder.size()-1);
+//     std::cout << "\n\t[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
+//     int final_next_num = m_next_num;
+//     next_num_remaining = m_next_num;
+
+//     if (hung_client_seg + final_next_num > hung_MAX_SEGMENTS)
+//       final_next_num = hung_MAX_SEGMENTS - hung_client_seg - 1;
+
+//     if (final_next_num < 0)
+//       return;
+
+//     std::string new_rate_string = std::to_string(new_rate);
+//     std::string retrans_rate_string = std::to_string(retrans_rate);
+
+//     // for retransmitted segment
+//     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_retrans_rate, 0);
+//     if (client->add_request(hung_uri+"/retrans/bitrate=" + retrans_rate_string+"/num="+std::to_string(m_retrans_num)+"/start_seg_id="+ std::to_string(needed_retrans_seg_id+1), 
+//                               dang_data_prd, dang_data_length, dang_pri_spec)) {
+//         if(submit)
+//             submit_request(client, dang_headers, client->reqvec.back().get()); 
+//         num_of_request++;
+//     }
+//     std::cout << "[RETRANS]\tseg [" << needed_retrans_seg_id +1 << "] at rate [" << retrans_rate << "]" << std::endl;//<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
+ 
+
+//     // for next segment                                        
+//     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_new_rate, 0);    // Step 1: set priority
+//     if (client->add_request(hung_uri+"/req_vod/bitrate=" + new_rate_string+"/num=" + std::to_string(m_next_num), 
+//                             dang_data_prd, dang_data_length, dang_pri_spec)) {
+//             submit_request(client, hung_headers, client->reqvec.back().get());
+//           num_of_request++;
+//           sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
+//                  get_time() - client->timing.connect_end_time).count();    
+//         }
+
+//     std::cout << "\tNEXT seg [" << hung_rate_recorder.size()+1 << "] at rate [" << new_rate_string << "]"// Step 3: print info
+//             << std::endl << std::endl;   
+
+//    // }
+//    //  else{
+//    //      int nghttp2_session_change_stream_priority(nghttp2_session *session, int32_t stream_id, const nghttp2_priority_spec *pri_spec)
+//    //  }
+//     client->signal_write();
+// }
+
+                        // minh_retrans_segment(client, minh_client_seg, new_rate, 
+                        //                              m_retrans_seg_id, retrans_rate, 
+                        //                              pri_new_rate, pri_retrans_rate, 1, 1);
+void minh_retrans_segment(HttpClient *client, int m_minh_client_seg, int new_rate, 
+                                              int m_retrans_seg_id,  int retrans_rate, 
+                                              int pri_new_rate, int pri_retrans_rate, 
+                                              int m_retrans_num, int m_next_num, bool submit=true){
+    //int curr_bitrate = hung_rate_recorder.at(hung_rate_recorder.size()-1);
+
     int final_next_num = m_next_num;
     next_num_remaining = m_next_num;
-    retrans_num_remaining = m_retrans_num;
-
-    std::cout << "[INFO] " << __func__ << "(): next_num_remaining: " << next_num_remaining << std::endl;
-    std::cout << "[INFO] " << __func__ << "(): retrans_num_remaining: " << retrans_num_remaining << std::endl;
-
-    if (hung_client_seg + final_next_num > hung_MAX_SEGMENTS)
-      final_next_num = hung_MAX_SEGMENTS - hung_client_seg - 1;
-
-    if (final_next_num < 0)
-      return;
 
     std::string new_rate_string = std::to_string(new_rate);
     std::string retrans_rate_string = std::to_string(retrans_rate);
 
+    std::string client_seg_string = std::to_string(m_minh_client_seg);
+    std::string retrans_seg_id    = std::to_string(m_retrans_seg_id);
+
     // for retransmitted segment
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_retrans_rate, 0);
-    std::string url_retrans = hung_uri+"/retrans/bitrate=" + retrans_rate_string+"/num="+std::to_string(m_retrans_num)+"/start_seg_id="+ std::to_string(needed_retrans_seg_id);
-    std::cout << "\tRETRANS url: " << url_retrans << std::endl;
-
-    if (client->add_request(url_retrans, dang_data_prd, dang_data_length, dang_pri_spec)) {
+    if (client->add_request(hung_uri+"/retrans/bitrate=" + retrans_rate_string+"/num="+std::to_string(m_retrans_num)+"/start_seg_id="+ std::to_string(m_retrans_seg_id), 
+                              dang_data_prd, dang_data_length, dang_pri_spec)) {
         if(submit)
             submit_request(client, dang_headers, client->reqvec.back().get()); 
         num_of_request++;
     }
-    std::cout << "\t[RETRANS] seg [" << needed_retrans_seg_id << "] at rate [" << retrans_rate << "]" << std::endl;//<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
+    std::cout << "\t[RETRANS] SVC\tseg [" << m_retrans_seg_id << "] at Layer [" << retrans_rate << "]" << std::endl;//<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
  
 
     // for next segment                                        
     nghttp2_priority_spec_init(&dang_pri_spec, 11, pri_new_rate, 0);    // Step 1: set priority
-    // if (client->add_request(hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
-    //                         "bitrate=" + new_rate_string+"/num=" + std::to_string(m_next_num), 
-    //                         dang_data_prd, dang_data_length, dang_pri_spec)) {
-    
-    std::string url = hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
-                          "/bitrate="+new_rate_string+"/num="+std::to_string(m_next_num)+"/start_seg="+std::to_string(minh_cur_seg_id);
-    std::cout << "\t NEXT url: " << url << std::endl;                          
-    if (client->add_request(url, dang_data_prd, dang_data_length, dang_pri_spec)){      
-      submit_request(client, hung_headers, client->reqvec.back().get());
-      num_of_request++;
-      sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
-             get_time() - client->timing.connect_end_time).count();    
+    if (client->add_request(hung_uri+"/req_vod/segment="+client_seg_string+"/bitrate="+new_rate_string+"/num="+ std::to_string(m_next_num), 
+                            dang_data_prd, dang_data_length, dang_pri_spec)) 
+    {
+        submit_request(client, hung_headers, client->reqvec.back().get());
+        num_of_request++;
+        sub_start_time = std::chrono::duration_cast<std::chrono::microseconds>(
+               get_time() - client->timing.connect_end_time).count();    
     }
 
-    std::cout << "\t[NEXT] seg [" << hung_rate_recorder.size()+1 << "] at rate [" << new_rate_string << "]"// Step 3: print info
+    std::cout << "\t[NEXT] SVC\tseg [" << m_minh_client_seg << "] at Layer [" << new_rate_string << "]"// Step 3: print info
             << std::endl << std::endl;   
-
-   // }
-   //  else{
-   //      int nghttp2_session_change_stream_priority(nghttp2_session *session, int32_t stream_id, const nghttp2_priority_spec *pri_spec)
-   //  }
     client->signal_write();
 }
+
+
 
 /* 191114 Minh [retransmission] ADD-S*/
 void compute_Smooth_thrp_est(){
@@ -2885,6 +2931,43 @@ void compute_Smooth_thrp_est(){
   }
 }
 
+int compute_next_bitrate(){
+  int m_next_bitrate = 0;
+  double m_curr_buff = hung_buff_recorder.at(hung_buff_recorder.size()-1);
+
+  int curr_rate_idx = getIndexByRate(hung_rate_recorder.at(hung_rate_recorder.size()-1));
+  if (m_curr_buff >= buff_high){
+    if (hung_rate_set.at(curr_rate_idx+1) < thrp_est){
+      m_next_bitrate = hung_rate_set.at(curr_rate_idx+1);
+    }
+    else{
+      m_next_bitrate = hung_rate_set.at(curr_rate_idx);
+    }
+  }
+  else if (m_curr_buff >= buff_low){
+    m_next_bitrate = hung_rate_set.at(curr_rate_idx);
+  }
+  else if (m_curr_buff >= buff_min){
+    if (time_download_recorder.at(time_download_recorder.size()-1) > hung_sd){
+      for (int i = curr_rate_idx-1; i >= 0; i--){
+        if (hung_cur_buff + hung_sd*next_num*(1 - hung_rate_set.at(i)*1.0/thrp_est) > buff_min){
+          m_next_bitrate = hung_rate_set.at(i);
+          return m_next_bitrate;
+        }
+        else {
+           m_next_bitrate = hung_rate_set.at(0);
+        }
+      }
+    }
+    else {
+      m_next_bitrate = hung_rate_set.at(curr_rate_idx);
+    }
+  }
+  else {
+    m_next_bitrate = hung_rate_set.at(0);
+  }
+  return m_next_bitrate;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /* SARA ABR -S*/
@@ -2895,8 +2978,8 @@ double get_harmonic_thrp(){
     m_harmonic_thrp = 1000;
   }
   else {
-    harmonic_sum_TS += last_seg_data*8;
-    harmonic_sum_MS += last_seg_data*8.0/hung_inst_thrp;
+    harmonic_sum_TS += last_seg_data;
+    harmonic_sum_MS += last_seg_data*1./hung_inst_thrp;
   }
 
   m_harmonic_thrp = harmonic_sum_TS*1.0/harmonic_sum_MS;
@@ -3069,18 +3152,6 @@ int BBA_adaptation_method(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-double get_smooth_thrp(){
-  if (hung_rate_recorder.size() == 1){
-    smoothedBW = minh_cur_thrp;
-  }
-  else {
-    smoothedBW = (1 - minh_smooth_thrp_margin)*smoothedBW +
-                 minh_smooth_thrp_margin*hung_thrp_recorder.at(hung_thrp_recorder.size()-1);
-  }
-
-  return smoothedBW;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////
 double get_harmonic_thrp_FESTIVE_ABR(){
   double m_harmonic_thrp = 0;
   double m_sum_thrp = 0;
@@ -3118,470 +3189,269 @@ void FESTIVE_adaptation_method(){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void minh_get_thrp_est (){
-    thrp_est = minh_cur_thrp; //0.9* minh_cur_thrp + 0.1* hung_thrp_recorder.at(hung_rate_recorder.size()-1);    
+    thrp_est = minh_cur_thrp;    
 }
-////////////////////////////////////////////////////////////////////////////////////////////////
-// void minh_get_thrp_est (NETWORK_ACK m_network_ack, int next_num){
-//   if (m_network_ack == NO){
-//     thrp_est = 0.9* minh_cur_thrp + 0.1* hung_thrp_recorder.at(hung_rate_recorder.size()-1);    
-//   }
-//   else{
-//     int current_time = (int) hung_sys_time/1000; // in milliseconds
-//     int end_time = hung_sys_time + hung_sd*next_num;
-//     for (int i = current_time )
-//     thrp_est = origin_thrp;   
-//   }
-// }
-////////////////////////////////////////////////////////////////////////////////////////////////
-void retransmission_method(HttpClient *client){
-  std::cout << "~~~~~~~~~~~~~~~~~~~~ PROPOSAL ~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  int rate_recorder_length = hung_rate_recorder.size();
-  int curr_bitrate = hung_rate_recorder.at(rate_recorder_length-1); 
-  int new_rate = -1;
 
-  if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //rebuffering ends
-    std::cout << "End rebuffering\n" 
-              << "hung_on_buffering: " << hung_on_buffering << '\n'
-              << "hung_cur_buff: " << hung_cur_buff << '\n'
-              << "minh_rebuff_exit: " << minh_rebuff_exit << '\n'
-              << std::endl;
-    if (hung_client_seg > minh_rebuff_exit/hung_sd){
-      playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
+
+void retransmission_method_SVC(HttpClient *client){
+  std::cout << "\n~~~~~~~~~~~~~~~~~~~~ PROPOSAL ~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+
+  if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //stop rebuffering for Aggressive ABR
+      if (minh_client_seg > minh_rebuff_exit/hung_sd && minh_client_seg < hung_max_seg_id_consideration){
+        playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
                                           get_time() - client->timing.connect_end_time).count();
-      int tmp_local_rebuff_duration = playout_start_time - minh_rebuff_start;
-      minh_rebuff_duration += tmp_local_rebuff_duration;
-      minh_rebuff_duration_recorder.push_back(tmp_local_rebuff_duration);  // in ms
-      
-      std::cout << "************************ START TO PLAYOUT ***************************\n"
-                << "Local rebuff duration: " << tmp_local_rebuff_duration << "ms\t"
-                << "Total rebuff duration: " << minh_rebuff_duration << "ms" << std::endl;
-    }
-    else {
-      start_play_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                  get_time() - client->timing.connect_end_time).count(); 
-      std::cout << "Startup phase ENDED at time " << start_play_time << "ms\n";
-    }
 
-    // [20.06.30] delete unceccessary lines DEL-S
-    rebuffering_while_download = false;
-    hung_on_buffering = false;
+        minh_rebuff_duration += playout_start_time - minh_rebuff_start;
+        minh_rebuff_duration_recorder.push_back(playout_start_time - minh_rebuff_start);  // in ms
+        
+        std::cout << "************************ START TO PLAYOUT ***************************"
+                  << "\n Total rebuff duration: " << minh_rebuff_duration << "ms" << std::endl;
+      } 
+      else if (minh_client_seg < hung_max_seg_id_consideration)
+      {
+        start_play_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                  get_time() - client->timing.connect_end_time).count(); 
+        printf("Startup phase ENDED\n");
+      }
+
+      hung_on_buffering = false;
   }
-  else if (!hung_on_buffering && hung_cur_buff < hung_sd) {  // Buffer < 1 segment. Rebuffering. NO RETRANSMISSION NECESSARY
+
+  if (hung_cur_buff < hung_sd) {  // start stall
     std::cout << "Start rebuffering" << std::endl;
     minh_rebuff_start = std::chrono::duration_cast<std::chrono::milliseconds>(
-                 get_time() - client->timing.connect_end_time).count();
+                                get_time() - client->timing.connect_end_time).count();
     hung_on_buffering = true;
-    // [20.06.30] delete unceccessary lines DEL-S
-    #if 0
-    buffering_just_stop = false;
-    hung_cur_buff = 0;
-    #endif
-    // [20.06.30] delete unceccessary lines DEL-E
     playout_start = false;
-    hung_req_vod_rebuff(client);
+    cur_layer_id = 1;
+    minh_client_seg ++; // goi segment tiep theo
+    segment[minh_client_seg].num_layers = 1;
+    hung_req_vod_rebuff(client, minh_client_seg, 1);
     return;
-  }
-  else if (hung_on_buffering && hung_cur_buff < minh_rebuff_exit) { // still rebuffering for AGG ABR
-    // [20.06.30] delete unceccessary lines DEL-S
-    #if 0
-    buffering_just_stop = false;
-    #else
+  } 
+
+
+  if (hung_on_buffering && hung_cur_buff < minh_rebuff_exit) { // still rebuffering for Aggressive ABR
     std::cout << "Still rebuffering" << std::endl;
-    if (rebuffering_while_download){
-      hung_req_vod_rebuff(client);
-    }
-    #endif
-    // [20.06.30] delete unceccessary lines DEL-E
+    cur_layer_id = 1;
+    minh_client_seg ++; // goi segment tiep theo
+    segment[minh_client_seg].num_layers = 1;
+    hung_req_vod_rebuff(client, minh_client_seg, 1);
+    
     return;
-  }
+  } 
+
+  int new_rate = -1;
+  next_num = 1;
 
   minh_get_thrp_est();
-  minh_thrp_est_recorder.push_back(thrp_est);
 
-// always compute next bitrate and next num
-  switch(minh_ABR){
-    case AGG:
-      std::cout << "**************** AGG *******************" << std::endl;
-      new_rate = hung_compute_max_adapted_rate(thrp_est * (1-hung_safety_margin));  // for AGG ABR
-      break;
-    case SARA:
-      new_rate = SARA_adaptation_method(); // for SARA ABR
-      break;
-    case BBA:
-      new_rate = BBA_adaptation_method(); // for BBA ABR
-      break;
-    default:
-      std::cout << "******************************** NO ABR AVAILABLE *****************************" << std::endl;
-      break;
-  }
-  next_num = (hung_sd >= 4000) ? 1 : Duc_K_determination();
-  next_num_remaining = next_num;
+  if (cur_layer_id == segment[minh_client_seg].num_layers) // go to next request.
+  {
 
-  // [20.06.30] delete unceccessary lines DEL-S
-  #if 0
-  if (!hung_on_buffering && !buffering_just_stop){ //just stop rebuffering
-    buffering_just_stop = true;
-    //new_rate = 1500;
-    //std::cout << "--- STOP REBUFFERING CHOOSE BITRATE 1500 ---" << std::endl;
-  }
-  #endif
-  // [20.06.30] delete unceccessary lines DEL-E
-    
-  int num_buffer_segment =  (int) hung_cur_buff/hung_sd; 
-  int buff_level_array[num_buffer_segment][2];
+    minh_client_seg ++;
+    cur_layer_id = 1;
+    int tmp_num_layers = 1;
+    estimated_throughput = hung_inst_thrp;
 
-  for (int i = 0; i < num_buffer_segment; i++){ // initialization
-    buff_level_array[i][0] = 0;
-    buff_level_array[i][1] = 0;
-  }
-
-
-// 0. trigger retrans
-  if (thrp_est > new_rate && 
-    minh_retrans_trigger == false && 
-    rate_recorder_length > num_buffer_segment &&
-    hung_buff_recorder.at(rate_recorder_length-1) >= retrans_buff_trigger_on && 
-    minh_retrans_extension){  
-    std::cout << "--- TRIGGER ON ---"<< std::endl;
-    minh_retrans_trigger = true;
-  } 
-  else if (hung_buff_recorder.at(rate_recorder_length-1) < retrans_buff_thres ||
-              !minh_retrans_extension){ 
-    minh_retrans_trigger = false;
-    std::cout << "*********************** NO RETRANS *************************** " << std::endl;
-  }
-
-// 1. If retrans trigger is ON
-  if (minh_retrans_trigger){
-    int arr_index = 0;
-    for (int buff_index = num_buffer_segment; buff_index > 0; ){
-      do {
-        buff_level_array[arr_index][0] = hung_rate_recorder.at(rate_recorder_length - buff_index);
-        buff_level_array[arr_index][1] ++;
-        buff_index --;
-      } while (buff_index > 0 && buff_level_array[arr_index][0] == hung_rate_recorder.at(rate_recorder_length - buff_index));
-      arr_index ++;
+    for (int i = MAX_LAYER_ID; i>=1; i--)
+    {
+      if ( MINH_SUM_BITRATE_SET[minh_client_seg % 12][i-1] < 0.9 *estimated_throughput)
+      {
+        tmp_num_layers = i;
+        std::cout << "\t\tSeg: " << minh_client_seg <<" \tbitrate: " << MINH_SUM_BITRATE_SET[minh_client_seg % 12][i-1]<<
+                      " \test_thrp: "<< 0.9 *estimated_throughput<<" Kbps\n" << std::endl;
+        break;
+      }
     }
 
-    #if 0
-    std::cout << "TEST COUNT BUFFER ELEMENTS -S" << std::endl;
-    std::cout << "Rate recorder: \n";
-    for (int j = num_buffer_segment; j > 0; j--){
-      std::cout << hung_rate_recorder.at(rate_recorder_length-j) << ' ' << rate_recorder_length-j+1 << std::endl;;
-    }
-    std::cout << std::endl;
-    for (int i = 0; i < num_buffer_segment && buff_level_array[i][1] != 0 ; i ++){
-      std::cout << i << " "<< buff_level_array[i][0] << " " << buff_level_array[i][1] << std::endl;
-    } 
-    std::cout << "TEST COUNT BUFFER ELEMENTS -E" << std::endl; 
-    #endif
+    segment[minh_client_seg].num_layers = tmp_num_layers;
+  }
+  else
+  {
+    cur_layer_id ++;
+  }
+  std::cout << "\t\tNext seg: "<<minh_client_seg<<". num_layers: " << segment[minh_client_seg].num_layers << ". Layer id: "<<cur_layer_id<<std::endl;
+  segment[minh_client_seg].layer[cur_layer_id-1].bitrate = MINH_BITRATE_SET[minh_client_seg % 12][cur_layer_id-1];
 
-    // 1.1 if buffer just has 1 level ==> 
-    if (buff_level_array[1][1] == 0){ // only 1 buff level ==> no retransmititng
-      // 20.07.19 delete redundancy DEL-S
-      #if 0
-      retrans_transmitting = false;
-      retrans_transmitting_period = false;      
-      #endif
-      // 20.07.19 delete redundancy DEL-E
-      minh_next_num_recorder.push_back(next_num);      
-      hung_req_vod_rate(client, new_rate);  //continue with current ABR // no retransmission          
+
+  // check if minh_retrans_extention = T or F
+  if (minh_retrans_extention && !retrans_transmitting)
+  {
+    std::cout << "~~~~~~~~ RETRANS EXTENION IS ENABLE~~~~~~~" << std::endl;
+    // trigger retrans
+    if (estimated_throughput > MINH_SUM_BITRATE_SET[minh_client_seg % 12][segment[minh_client_seg].num_layers-1] &&
+        // minh_retrans_trigger == FALSE &&
+        minh_client_seg*hung_sd > MINH_REBUF_THRESHOLD_EXIT &&
+        hung_cur_buff >= RETRANS_BUFF_TRIGGER_ON)
+    {
+        minh_retrans_trigger = TRUE;
+    }
+    else //if (hung_cur_buff < retrans_buff_thres)
+    {
+        minh_retrans_trigger = FALSE;
+    }
+
+    // 1. If retrans trigger is ON
+    if (minh_retrans_trigger)
+    {
+        std::cout << "-------------------- RETRANS. IS TRIGGERED ----------------------\n" << std::endl;
+        if (cur_layer_id == 1)  // just jump to the next segment. ??? Chi check retrans trong truong hop nay?
+        { 
+            // find the highest gap amplitude
+            int i;
+            int m_gap_amplitude = 0;
+            int m_retrans_seg_id = 0;
+
+            bool found_a_gap = FALSE;
+            for (i = minh_client_seg - (int) hung_cur_buff/hung_sd + 1; i < minh_client_seg; i++)
+            {
+                if (i == minh_client_seg-1)
+                { 
+                    if (segment[i-1].num_layers - segment[i].num_layers > m_gap_amplitude)
+                    {
+                        m_gap_amplitude = segment[i-1].num_layers - segment[i].num_layers;
+                        m_retrans_seg_id = i;
+                        found_a_gap = TRUE;
+                    }                 
+                }
+                else
+                {
+                  // std::cout << "\n\t[MINH] INFO: " << __FILE__ << ": " << __func__<< "(): " << __LINE__ << std::endl;
+                    if (segment[i-1].num_layers - segment[i].num_layers > m_gap_amplitude || 
+                        segment[i+1].num_layers - segment[i].num_layers > m_gap_amplitude)
+                    {
+                        m_gap_amplitude = MAX(segment[i-1].num_layers - segment[i].num_layers,
+                                              segment[i+1].num_layers - segment[i].num_layers);
+                        m_retrans_seg_id = i;
+                        found_a_gap = TRUE;
+                    } 
+                }
+
+                if(found_a_gap && i < hung_max_seg_id_consideration)
+                {
+                    // tinh t^a, T^R, B^e
+                    int next_all_rate = MINH_SUM_BITRATE_SET[minh_client_seg % 12][segment[minh_client_seg].num_layers-1];
+                    int retrans_rate = MINH_BITRATE_SET[m_retrans_seg_id % 12][segment[m_retrans_seg_id].num_layers];
+                    double t_avai = (m_retrans_seg_id -minh_client_seg)*hung_sd + hung_cur_buff;
+                    double retrans_throughput = hung_sd*retrans_rate / t_avai;
+                    double estimated_buffer = hung_cur_buff + 
+                            hung_sd*(1 - (next_all_rate + retrans_rate)/estimated_throughput);
+
+                    if (retrans_throughput < estimated_throughput &&
+                        estimated_buffer > THETA)
+                    {
+                        double division_factor = MAX(retrans_throughput/256, 
+                                                        (estimated_throughput-retrans_throughput)/256);
+                        assert(division_factor != 0);
+
+                        pri_retrans_rate = MAX((int) retrans_throughput / division_factor, 1);
+                        pri_new_rate    = MAX((int) (estimated_throughput-retrans_throughput) / division_factor, 1);
+
+                        assert(pri_retrans_rate >= 1 && pri_retrans_rate <= 256 &&
+                               pri_new_rate >= 1 && pri_new_rate <= 256);
+
+                        retrans_check = TRUE;
+                        retrans_transmitting = TRUE;
+                        minh_retrans_seg ++;
+                        // printf("MINH-2; minh_retrans_No.: %d\n", minh_retrans_seg);
+                        retrans_seg_id = m_retrans_seg_id;
+                        retrans_seg_id_recorder[minh_retrans_seg] = m_retrans_seg_id;
+                        retrans_num ++;
+                        retrans_retransmitted_seg_recorder.push_back(retrans_seg_id);
+                        //send retrans request retrans_layer_id + retrans_segment_id
+                        minh_retrans_segment(client, minh_client_seg, cur_layer_id, 
+                                                     m_retrans_seg_id, segment[m_retrans_seg_id].num_layers +1, 
+                                                     pri_new_rate, pri_retrans_rate, 1, 1);                        
+                        std::cout << "[RETRANS # " << retrans_num << "] info: seg " << retrans_seg_id << 
+                                      " \tnew layer: " << segment[m_retrans_seg_id].num_layers +1  <<
+                                      " \tPri_retrans: " << pri_retrans_rate << " \tPri_next: " << pri_new_rate << std::endl;  
+                        return;                      
+                    }
+                    else
+                    {
+                      // std::cout << "Found gap but cannot retrans" << std::endl;
+                    }
+                }
+            }
+            // if (!found_a_gap){
+            std::cout << "Scanned but no gap" << std::endl;
+            hung_req_vod_rate(client, minh_client_seg, cur_layer_id);  //continue with current ABR // no retransmission 
+            return; 
+            // }
+        }
+        else
+        { // next layer is EL ==> no retrans. why??
+          //send next request: cur_layer_id + minh_client_seg 
+          hung_req_vod_rate(client, minh_client_seg, cur_layer_id);  //continue with current ABR // no retransmission  
+          return;
+        }
+    } // retrans trigger is ON    
+    else
+    {
+      //send next request: cur_layer_id + minh_client_seg 
+      hung_req_vod_rate(client, minh_client_seg, cur_layer_id);  //continue with current ABR // no retransmission  
+      std::cout << "--------------------- CANNOT RETRANS -------------------" << std::endl;
       return;
-    }    
-    else{
-      // List all gap regions
-      std::vector<int> retrans_gap_region_index;
-
-      for (int i = 0; i < num_buffer_segment && buff_level_array[i+1][1] != 0; i++){
-        if (i == 0 &&
-            buff_level_array[i][0] < buff_level_array[i+1][0]){
-          retrans_gap_region_index.push_back(i);
-          // std::cout << "\tGap region index " << i << std::endl;
-        }
-        else if (buff_level_array[i][0] < buff_level_array[i-1][0] &&
-                 buff_level_array[i][0] < buff_level_array[i+1][0]){ 
-          retrans_gap_region_index.push_back(i);
-          // std::cout << "\tGap region index " << i << std::endl;
-        }
-      }
-
-      // if there's no gap region
-      if (retrans_gap_region_index.size() == 0){
-        // 20.07.19 delete redundancy DEL-S
-        #if 0
-        retrans_transmitting = false;
-        retrans_transmitting_period = false;
-        #endif
-        // 20.07.19 delete redundancy DEL-E
-        minh_next_num_recorder.push_back(next_num);      
-        hung_req_vod_rate(client, new_rate);  //continue with current ABR // no retransmission    
-        return;       
-      }  
-      else{ // if there's at least 1 gap region
-        for (auto a = retrans_gap_region_index.begin(); a != retrans_gap_region_index.end(); ++a){
-          std::cout << "region index: " << *a << std::endl;
-          // determine the segment idx of this gap region
-          int num_buff_seg_before_curr = 0;
-          for (int i = 0;i < *a; i++){
-            num_buff_seg_before_curr += buff_level_array[i][1];
-          }
-          int first_seg_idx = rate_recorder_length - num_buffer_segment + num_buff_seg_before_curr + 1;
-          int last_seg_idx = first_seg_idx + buff_level_array[*a][1] - 1;
-          // #if 0
-          std::cout << "first_seg_idx: " << first_seg_idx << '\n'
-                    << "last_seg_idx : " << last_seg_idx << std::endl;
-                    // << "rate_recorder_length: " << rate_recorder_length << '\n'
-                    // << "num_buffer_segment: " << num_buffer_segment << '\n'
-                    // << "num_buff_seg_before_curr: " << num_buff_seg_before_curr << '\n'
-                    // << "buff_level_array[*a][1]: " << buff_level_array[*a][1] << std::endl;
-          // #endif
-//determine what is the retrans_rate and the number of retransmitted segment
-          for (int j = first_seg_idx; j <= last_seg_idx; j++){
-            int     m_t_avai = j*hung_sd + minh_rebuff_duration + start_play_time - hung_sys_time;
-            std::cout << "current consider segment: " << j << " avai. time (ms): " << m_t_avai << std::endl;
-            //[20.06.30] Allow a segment to be retransmitted multiple time DEL-S
-            #if 0
-            if ((retrans_retransmitted_seg_recorder.size() > 0 &&             
-                  j <= retrans_retransmitted_seg_recorder.at(retrans_retransmitted_seg_recorder.size()-1) &&
-                  hung_rate_recorder.at(j-1) != minh_rate_recorder.at(j-1))) { // retransmitted successfully
-              std::cout << "*********************** initial check ****************" << std::endl;
-              continue;
-            }
-            #else
-            
-            if (!minh_optimize_bitrate &&   // no optimizing bitrate ==> only retrans. a segment once.
-                  retrans_retransmitted_seg_recorder.size() > 0 &&             
-                  j <= retrans_retransmitted_seg_recorder.at(retrans_retransmitted_seg_recorder.size()-1) &&
-                  hung_rate_recorder.at(j-1) != minh_rate_recorder.at(j-1)) { // retransmitted successfully
-              std::cout << "*********************** initial check ****************" << std::endl;
-              continue;
-            }
-            #endif
-            //[20.06.30] Allow a segment to be retransmitted multiple time DEL-E
-
-            int max_bitrate = buff_level_array[*a+1][0];
-            int min_bitrate = buff_level_array[*a+1][0];
-
-            if (*a != 0 && 
-                buff_level_array[*a+1][0] < buff_level_array[*a-1][0]){
-              max_bitrate = buff_level_array[*a-1][0];
-            }            
-            else if (*a == 0){
-              min_bitrate = hung_rate_set.at(getIndexByRate(hung_rate_recorder.at(j-1))+1);
-            }
-            else {
-              min_bitrate = buff_level_array[*a-1][0];
-            }
-
-            int m_retrans_buff_thres = 100000;
-            switch(minh_ABR){
-              case AGG:
-                if (hung_cur_buff > buff_max/2){
-                  m_retrans_buff_thres = buff_max/2;
-                }
-                else {
-                  m_retrans_buff_thres = retrans_buff_thres;
-                }
-                std::cout << "AGG - m_retrans_buff_thres: " << m_retrans_buff_thres << std::endl;
-                break;
-              case SARA:
-                m_retrans_buff_thres = SARA_buff_thres;
-                std::cout << "SARA - m_retrans_buff_thres: " << m_retrans_buff_thres << std::endl;
-                break;
-              case BBA: // buffer based
-                m_retrans_buff_thres = BBA_buff_thres;
-                std::cout << "BBA - m_retrans_buff_thres: " << m_retrans_buff_thres << std::endl;
-                break;
-              default:
-                std::cout << "******************************** NO ABR AVAILABLE *****************************" << std::endl;
-                break;
-            }
-            std::cout << "curr_buff: " << hung_cur_buff << std::endl;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            retrans_num = last_seg_idx + 1 - j; //k_r
-            // [20.06.30] update code ADD-S
-            #if 0
-            double temp_A = (hung_cur_buff + next_num*hung_sd - m_retrans_buff_thres)/hung_sd;
-            double temp_B = (temp_A*thrp_est - next_num*new_rate)/retrans_num;
-            #else
-            if (m_t_avai <= 0)
-              continue;
-
-            double temp_A = hung_cur_buff + next_num*hung_sd*(1-new_rate/thrp_est) - m_retrans_buff_thres;
-            double temp_B = retrans_num*hung_sd/thrp_est;
-            temp_B = temp_A/temp_B;
-            #endif
-            // [20.06.30] update code ADD-E
-
-            // std::cout << "min_bitrate " << min_bitrate << '\n'
-            //           << "temp_B " << temp_B << '\n'
-            //           << "max_bitrate " << max_bitrate << '\n' << std::endl;
-            static double retrans_thrp = 0;
-
-            for (int k = getIndexByRate(hung_compute_max_adapted_rate(max_bitrate)); 
-                     k >= getIndexByRate(min_bitrate); k--){
-              int m_cur_rate = hung_rate_set.at(k);
-              retrans_thrp = m_cur_rate*hung_sd/m_t_avai;
-
-              if (m_cur_rate <= temp_B && retrans_thrp < thrp_est){
-                retrans_rate = m_cur_rate;
-                std::cout << "Found retrans rate: " << retrans_rate << "(< temp_B)" << std::endl;
-                retrans_num = last_seg_idx + 1 - j;
-                found_rates = true;
-                needed_retrans_seg_id = j;   
-                break;             
-              }
-              else {
-                found_rates = false;
-              }
-            }
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            if (!found_rates){
-              std::cout << "----------------------------CAN'T FOUND ANY RATE. MOVE TO THE NEXT SEGMENT. Current j: " << j << std::endl;
-              retrans_transmitting = false;
-              retrans_transmitting_period = false; 
-              continue; // go to the next segment
-            }
-            else{
-              retrans_transmitting = true;
-              retrans_transmitting_period = true; 
-
-              // [20.06.30] update code ADD-S
-              #if 0
-              double allocated_thrp_new = (thrp_est - retrans_rate > 0) ? thrp_est - retrans_rate : 1 ; //t_1*hung_sd;
-              double allocated_thrp_retrans = retrans_rate; //t_2*hung_sd;
-              int m_divider = 10;
-              if (allocated_thrp_retrans > 2550 || allocated_thrp_new > 2550)
-                m_divider = 100;
-              pri_new_rate     = MIN((int) (allocated_thrp_new/m_divider), 256);
-              pri_retrans_rate = MIN((int) (allocated_thrp_retrans/m_divider), 256);
-              #else
-              double temp_thrp_proportion = retrans_thrp/(thrp_est - retrans_thrp);
-              if (temp_thrp_proportion > 1){
-                pri_retrans_rate = 256;
-                pri_new_rate =  (int) pri_retrans_rate/temp_thrp_proportion;
-              }
-              else {
-                pri_new_rate = 256;
-                pri_retrans_rate =  (int) pri_new_rate*temp_thrp_proportion;
-              }
-              #endif
-              // [20.06.30] update code ADD-E
-
-              minh_pri_proportion_recorder.push_back((double) pri_new_rate*1.0/pri_retrans_rate);
-
-              minh_next_num_recorder.push_back(next_num);
-              minh_retrans_num_recorder.push_back(retrans_num);
-
-              for (int i = needed_retrans_seg_id; i < needed_retrans_seg_id + retrans_num; i++){
-                retrans_retransmitted_seg_recorder.push_back(i);
-              }
-
-              minh_retrans_data = retrans_rate*hung_sd/8000;
-              minh_next_data    = new_rate*hung_sd/8000;
-              minh_retrans_segment(client, new_rate, retrans_rate, pri_new_rate, pri_retrans_rate, needed_retrans_seg_id, retrans_num, next_num);
-              std::cout <<"***** Minh_2: needed_retrans_seg_id: " << needed_retrans_seg_id << std::endl;
-              std::cout << "***** Minh_2: RETRANS INFO new and retrans \n" << new_rate << "\t" << pri_new_rate  << "\n"
-                                                         << retrans_rate << "\t" << pri_retrans_rate << "\n"
-                                                         << std::endl;
-              return;
-            }
-          }
-        }
-
-        // scan all gap regions but can't retransmit
-        std::cout <<  "SCAN ALL GAP REGIONS BUT NO RETRANSMITTING" << std::endl;
-        retrans_transmitting = false;
-        retrans_transmitting_period = false; 
-        minh_next_num_recorder.push_back(next_num);      
-        hung_req_vod_rate(client, new_rate);  //continue with current ABR // no retransmission    
-        return;        
-      }
     }
-  }
-  else{ // just sent RST request ==> no retransmisison, wait until buffer is high enough.
-    // call ABR here
-    std::cout << "--- TRIGGER OFF ---"<< std::endl;
-    minh_next_num_recorder.push_back(next_num);      
-    hung_req_vod_rate(client, new_rate);  //continue with current ABR // no retransmission    
-    return;  
-  }    
-///////////////////////////////////////////////////////////////////////////////////////////////   
 
-// retransmisison algorithm -E        
+
+  } // minh_retrans_extention ON
+  else
+  {
+    //send next request: cur_layer_id + minh_client_seg 
+    hung_req_vod_rate(client, minh_client_seg, cur_layer_id);  //continue with current ABR // no retransmission  
+    return;
+  }
+  std::cout << " ABR DONE" << std::endl;
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void retransmission_SQUAD_method(HttpClient *client){
   std::cout << "~~~~~~~~~~~~~~~~~~~~ SQUAD ~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+  // minh_retransmission_method = SQUAD;
   int rate_recorder_length = hung_rate_recorder.size();
   int curr_bitrate = hung_rate_recorder.at(rate_recorder_length-1); 
-  int new_rate = -1;
 
-  if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //rebuffering ends
-    std::cout << "End rebuffering\n" 
-              << "hung_on_buffering: " << hung_on_buffering << '\n'
-              << "hung_cur_buff: " << hung_cur_buff << '\n'
-              << "minh_rebuff_exit: " << minh_rebuff_exit << '\n'
-              << std::endl;
-    if (hung_client_seg > minh_rebuff_exit/hung_sd){
-      playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
-                                          get_time() - client->timing.connect_end_time).count();
-      int tmp_local_rebuff_duration = playout_start_time - minh_rebuff_start;
-      minh_rebuff_duration += tmp_local_rebuff_duration;
-      minh_rebuff_duration_recorder.push_back(tmp_local_rebuff_duration);  // in ms
-      
-      std::cout << "************************ START TO PLAYOUT ***************************\n"
-                << "Local rebuff duration: " << tmp_local_rebuff_duration << "ms\t"
-                << "Total rebuff duration: " << minh_rebuff_duration << "ms" << std::endl;
-    }
-    else {
-      start_play_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                  get_time() - client->timing.connect_end_time).count(); 
-      std::cout << "Startup phase ENDED at time " << start_play_time << "ms\n";
-    }
-
-    // [20.06.30] delete unceccessary lines DEL-S
-    rebuffering_while_download = false;
-    hung_on_buffering = false;
-  }
-  else if (!hung_on_buffering && hung_cur_buff < hung_sd) {  // Buffer < 1 segment. Rebuffering. NO RETRANSMISSION NECESSARY
-    std::cout << "Start rebuffering" << std::endl;
+  if (hung_cur_buff < 1000) {  // Buffer < 1 segment, NO RETRANSMISSION NECESSARY
     minh_rebuff_start = std::chrono::duration_cast<std::chrono::milliseconds>(
                  get_time() - client->timing.connect_end_time).count();
     hung_on_buffering = true;
-    // [20.06.30] delete unceccessary lines DEL-S
-    #if 0
     buffering_just_stop = false;
     hung_cur_buff = 0;
-    #endif
-    // [20.06.30] delete unceccessary lines DEL-E
     playout_start = false;
     hung_req_vod_rebuff(client);
     return;
-  }
-  else if (hung_on_buffering && hung_cur_buff < minh_rebuff_exit) { // still rebuffering for AGG ABR
-    // [20.06.30] delete unceccessary lines DEL-S
-    #if 0
+  } 
+
+  int new_rate = -1;
+
+  if (hung_on_buffering && hung_cur_buff < minh_rebuff_exit) { // still REBUFFERING - for Aggressive ABR
     buffering_just_stop = false;
-    #else
-    std::cout << "Still rebuffering" << std::endl;
-    if (rebuffering_while_download){
-      hung_req_vod_rebuff(client);
-    }
-    #endif
-    // [20.06.30] delete unceccessary lines DEL-E
     return;
+  } 
+
+
+  if (hung_on_buffering && hung_cur_buff >= minh_rebuff_exit) { //rebuffering ends for Aggressive ABR
+      if (playout_start == false){
+        playout_start = true;
+        playout_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
+                 get_time() - client->timing.connect_end_time).count();
+        minh_rebuff_duration_recorder.push_back(playout_start_time - minh_rebuff_start);  // in ms
+        minh_rebuff_duration += playout_start_time - minh_rebuff_start;
+        std::cout << "************************ START TO PLAYOUT ***************************"
+                  << "\n rebuff duration: " << minh_rebuff_duration << "ms" << std::endl;
+      } 
+
+      hung_on_buffering = false;
   }
 
   minh_get_thrp_est();
-  minh_thrp_est_recorder.push_back(thrp_est);
+  minh_thrp_est_recorder.push_back(thrp_est);  
 
-// always compute next bitrate and next num
   switch(minh_ABR){
-    case AGG:
-      std::cout << "**************** AGG *******************" << std::endl;
-      new_rate = hung_compute_max_adapted_rate(thrp_est * (1-hung_safety_margin));  // for AGG ABR
+    case AGGRESSIVE:
+      new_rate = hung_compute_max_adapted_rate(thrp_est * (1-hung_safety_margin));
       break;
     case SARA:
       new_rate = SARA_adaptation_method(); // for SARA ABR
@@ -3594,18 +3464,17 @@ void retransmission_SQUAD_method(HttpClient *client){
       break;
   }
   next_num = (hung_sd >= 4000) ? 1 : Duc_K_determination();
-  next_num_remaining = next_num;
 
-  /*191110 squad_retransmisison -S*/    
+/*191110 squad_retransmisison -S*/    
   if (hung_buff_recorder.at(hung_buff_recorder.size()-1) >= squad_buff_high && squad_retrans_trigger == false){  //trigger retrans
-    std::cout << "****** SQUAD TRIGGER ON **********" << std::endl;
+    std::cout << "****** SUQAD TRIGGER ON **********" << std::endl;
     squad_retrans_trigger = true;
   } else if (hung_buff_recorder.at(hung_buff_recorder.size()-1) < squad_buff_low){
-    std::cout << "****** SQUAD TRIGGER OFFFFF **********" << std::endl;
+    std::cout << "****** SUQAD TRIGGER OFFFFF **********" << std::endl;
     squad_retrans_trigger = false;
   }
-     
-  int num_buffer_segment =  (int) hung_cur_buff/hung_sd; // segments from minh_max_next_seg_id back to minh_max_next_seg_id - (num_buffer_segment-1)
+    
+  int num_buffer_segment =  (int) hung_cur_buff/hung_sd; 
   int buff_level_array[num_buffer_segment][2];
 
   if (squad_retrans_trigger){ //check buffer segment to consider retransmisison
@@ -3618,20 +3487,19 @@ void retransmission_SQUAD_method(HttpClient *client){
     int arr_index = 0;
     for (int buff_index = num_buffer_segment; buff_index > 0; ){
       do {
-        buff_level_array[arr_index][0] = hung_rate_recorder.at(rate_recorder_length - buff_index);  //check again 20.7.21
+        buff_level_array[arr_index][0] = hung_rate_recorder.at(rate_recorder_length - buff_index);
         buff_level_array[arr_index][1] ++;
         buff_index --;
       } while (buff_index > 0 && buff_level_array[arr_index][0] == hung_rate_recorder.at(rate_recorder_length - buff_index));
       arr_index ++;
     }
 
-    std::cout << "TEST COUNT BUFFER ELEMENTS -S" << std::endl;
-    std::cout << "Rate recorder: \n";
-    for (int j = num_buffer_segment; j > 0; j--){
-      std::cout << hung_rate_recorder.at(rate_recorder_length-j) << ' ' << rate_recorder_length-j+1 << std::endl;;
-    }
-    std::cout << std::endl;
-
+    // std::cout << "TEST COUNT BUFFER ELEMENTS -S" << std::endl;
+    // std::cout << "Rate recorder: \n";
+    // for (int j = num_buffer_segment; j > 0; j--){
+    //   std::cout << hung_rate_recorder.at(rate_recorder_length-j) << ' ' << rate_recorder_length-j << std::endl;;
+    // }
+    // std::cout << std::endl;
     for (int i = 0; i < num_buffer_segment && buff_level_array[i][1] != 0 ; i ++){
       std::cout << i << " "<< buff_level_array[i][0] << " " << buff_level_array[i][1] << std::endl;
     } 
@@ -3723,6 +3591,8 @@ void retransmission_SQUAD_method(HttpClient *client){
     if (considered_buff_level_id != -1){ // need retransmission
       temp_index_distance = buff_level_array[considered_buff_level_id][1];
       retrans_num = temp_index_distance; //(temp_index_distance < 4 ) ? temp_index_distance : 4;
+      // next_num = Duc_K_determination(); 
+      // new_rate = hung_compute_max_adapted_rate ((1-hung_safety_margin)*thrp_est); // for e.x: test  
       
       if (considered_buff_level_id == 0){
         retrans_rate = buff_level_array[considered_buff_level_id + 1][0];
@@ -3742,7 +3612,7 @@ void retransmission_SQUAD_method(HttpClient *client){
         sum += buff_level_array[i][1];
       }
 
-      needed_retrans_seg_id = hung_rate_recorder.size() - num_buffer_segment + sum +1;
+      needed_retrans_seg_id = hung_rate_recorder.size() - num_buffer_segment + sum;
 
       squad_avai_time.clear();
 
@@ -3763,7 +3633,9 @@ void retransmission_SQUAD_method(HttpClient *client){
       squad_retrans_start_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                                 get_time() - client->timing.connect_end_time).count();
 
-      minh_retrans_segment(client, new_rate, retrans_rate, pri_new_rate, pri_retrans_rate, needed_retrans_seg_id, retrans_num, next_num);
+      
+
+      // minh_retrans_segment(client, new_rate, retrans_rate, pri_new_rate, pri_retrans_rate, needed_retrans_seg_id, retrans_num, next_num);
       std::cout << "***** Minh_2: RETRANS INFO \n" << "start_seg_id " << needed_retrans_seg_id << "\n"
                                                    << "retrans_rate " << retrans_rate << std::endl;             
     }
@@ -3785,7 +3657,6 @@ void retransmission_SQUAD_method(HttpClient *client){
 
 void get_inst_thrp (TRACE_MODE mode, long m_sub_download_time_us, double m_temp_thrp){
   if (mode == TRACE_3G){ // 3G
-    std::cout << "=============== TRACE_3G ==================" << std::endl;
     if (hung_rate_recorder.size() == 0){
       hung_inst_thrp = 1000;
     }
@@ -3796,23 +3667,24 @@ void get_inst_thrp (TRACE_MODE mode, long m_sub_download_time_us, double m_temp_
 
     if(hung_inst_thrp > 4000) 
       hung_inst_thrp = hung_thrp_recorder.at(hung_rate_recorder.size()-1);  // thuc ra k dung lam  
+
+    std::cout << "~~~~~~~~~~~~~~~~ trace 3g [" << hung_inst_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
   }
   else if (mode == TRACE_4G){ // 4G
-    std::cout << "~~~~~~~~~~~~~~~~ TRACE_4G ~~~~~~~~~~~~~~~~" << std::endl;
-    if (m_sub_download_time_us > 20000 || hung_rate_recorder.size() == 0)
-      hung_inst_thrp = (m_temp_thrp > 60000) ? 60000 : m_temp_thrp; // limit the measured throughput.
-    else 
-      hung_inst_thrp = hung_thrp_recorder.at(hung_rate_recorder.size()-1);
-  }
-  else if (mode == TRACE_5G){ // 5G
-    std::cout << "~~~~~~~~~~~~~~~~ TRACE_5G ~~~~~~~~~~~~~~~~" << std::endl;
-    hung_inst_thrp = MIN(m_temp_thrp, 300000);
-    if (m_temp_thrp == 0){
-      hung_inst_thrp = 200000;
+    // std::cout << "~~~~~~~~~~~~~~~~ trace 4g m_temp_thrp [" << m_temp_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
+    if (m_temp_thrp < 65000 && m_temp_thrp > 0)
+    {
+      hung_inst_thrp = m_temp_thrp;
     }
-  }
-  else {
-    std::cerr << "[ERROR-get_inst_thrp()] Wrong Network type. Available types (3G, 4G, 5G)" << std::endl;
+    else 
+    {
+      if (hung_inst_thrp == 0)
+        hung_inst_thrp = 20000;
+      else
+        hung_inst_thrp = hung_inst_thrp; //hung_thrp_recorder.at(hung_rate_recorder.size()-1);
+    }
+
+    // std::cout << "~~~~~~~~~~~~~~~~ trace 4g hung_inst_thrp [" << hung_inst_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
   }
 }
 /* 191114 Minh [retransmission] ADD-E*/
@@ -3820,6 +3692,7 @@ void get_inst_thrp (TRACE_MODE mode, long m_sub_download_time_us, double m_temp_
 namespace {
 int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
                              uint32_t error_code, void *user_data) {
+  // std::cout << "\n****************** CLOSE STREAM 1******************" << std::endl;
   auto client = get_client(user_data);
   auto req = static_cast<Request *>(
       nghttp2_session_get_stream_user_data(session, stream_id));
@@ -3836,13 +3709,13 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
   update_html_parser(client, req, nullptr, 0, 1);
   ++client->complete;
 
- std::cout << "\n****************** CLOSE STREAM ******************" << std::endl;
- std::cout << "* Minh * path\t " << req->make_reqpath() << std::endl;
-
-  if (req->stream_id % 2 == 0) {
+  if (req->stream_id % 2 == 0) 
+  {
+    std::cout << "\n****************** CLOSE STREAM ******************" << std::endl;
+    std::cout << "* Minh * path\t " << req->make_reqpath() << std::endl;    
     hung_client_seg = hung_get_seg_from_uri(req->make_reqpath());    
     int rate = hung_get_rate_from_uri(req->make_reqpath());
-    minh_max_next_seg_id = MAX(hung_client_seg, minh_max_next_seg_id);
+    int layer_id = 0;
 
     hung_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                       get_time() - client->timing.connect_end_time).count(); 
@@ -3851,223 +3724,143 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     // to measure inst_thrp
     long sub_end_time = std::chrono::duration_cast<std::chrono::microseconds>(            // time from beginning to end segment
                  req->timing.response_end_time - client->timing.connect_end_time).count();
-    std::cout << "* Minh * current time: " << hung_sys_time << "ms\n" 
-              << "* Minh * current seg id: " << hung_client_seg << '\n'
-              << "* Minh * max seg id: " << minh_max_next_seg_id << '\n'
-              << std::endl;
 
     // to measure inst_thrp
     long sub_download_time_us = sub_end_time - sub_start_time;
+    
     auto temp_thrp = (double) sub_downloaded_data * 8 * 1000 / sub_download_time_us;
+    
     get_inst_thrp (TRACE_4G, sub_download_time_us, temp_thrp);
 
     minh_thrp_measured_recorder.push_back(hung_inst_thrp);  // recorder every time a segment is downloaded completely
-         
-/*#############################################################################################################################################*/
-    if (minh_get_type_from_uri_1(req->make_reqpath()) == "/RETRANS" && !termination_trigger){  // stream nay la stream cho segment retransmitted 
-      long retrans_download_time = std::chrono::duration_cast<std::chrono::microseconds>(            // time from beginning to end segment
-                 req->timing.response_end_time - req->timing.response_start_time).count(); 
-      retrans_num_remaining --;
 
-      std:: cout << "[RETRANS] received retransmitted seg " 
-                << hung_client_seg << " in " << (retrans_download_time*1.0 / 1000) << "ms"
-                << " at time " << hung_sys_time << "ms."
-                << " # retrans remaining: " << retrans_num_remaining
-                << std::endl;
-
-      std::cout << "\t Retrans with whole thrp: " << hung_inst_thrp << std::endl;   
-
-      // compute thrp -E      
-      // double temp_retrans_buff = (hung_client_seg*hung_sd - (hung_buff_recorder.size()*hung_sd - hung_buff_recorder.at(hung_buff_recorder.size()-1)) - retrans_download_time)/1000.0;  // in second
-      double temp_retrans_buff = hung_client_seg*hung_sd + minh_rebuff_duration + start_play_time - hung_sys_time;
-      // double temp_retrans_buff = (hung_client_seg*1000 - (hung_sys_time - playout_start_time))/1000.0; //second
-      std::cout << "\t Retrans buff_1: " << temp_retrans_buff << "ms" << std::endl;
-      retrans_buffer_recorder.push_back(temp_retrans_buff);
-
-      num_success_retrans ++;
-      amount_waste_data += minh_data_downloaded_recorder.at(hung_client_seg-1);
-      hung_rate_recorder.at(hung_client_seg-1) = rate;
-      minh_data_downloaded_recorder.at(hung_client_seg-1) = req->response_len;
-      minh_rate_ret_id_recorder.at(hung_client_seg-1) = getIndexByRate(rate)+1;
-      retrans_check = false; 
-      found_rates = false;     
-      int m_retrans_segment_size = retrans_retransmitted_seg_recorder.size();
-      std::cout << "m_retrans_segment_size: " << m_retrans_segment_size << std::endl;
-
-      if (!retrans_transmitting_period &&
-         (hung_client_seg == retrans_retransmitted_seg_recorder.at(m_retrans_segment_size-1) || termination_trigger)){ // k period va day la retransmitted seg cuoi cung
-        retrans_transmitting = false;
-        minh_cur_thrp = hung_inst_thrp;
-        int minh_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                 get_time() - client->timing.connect_end_time).count();       
-
-        // [20.06.30] correct some mistake MOD-S
-        #if 0
-        hung_cur_buff -= (minh_sys_time - hung_last_adapt_time); 
-        #else
-        long temp_buff = (minh_max_next_seg_id)*hung_sd + minh_rebuff_duration + start_play_time - hung_sys_time;
-        if (temp_buff < 0)
-          hung_cur_buff = 0;
-        else
-          hung_cur_buff = temp_buff;
-        #endif
-        // [20.06.30] correct some mistake MOD-E
-        std::cout << "############# last retrans hung_cur_buff: " << hung_cur_buff << "ms" << std::endl;
+    long m_update_diff_time = hung_sys_time - hung_last_adapt_time; // ms 
+    hung_last_adapt_time = hung_sys_time;
+    /*#############################################################################################################################################*/
+    if (minh_get_type_from_uri_1(req->make_reqpath()) == "/RETRANS")
+    {  // stream nay la stream cho segment retransmitted 
+      if (termination_trigger)     
+      {
+        std::cout << "============================================= RETRANS FAIL. DON'T UPDATE ===========" << std::endl;
+        termination_trigger = false; 
+        return 0;       
+      } 
+      else// retrans successfully
+      {
+        segment[hung_client_seg].num_layers ++;
+        layer_id = segment[hung_client_seg].num_layers;
+        // segment[retrans_seg_id].layer[layer_id].stream_id = req->stream_id;
+        retrans_check = false; 
+        found_rates = false;
+        std::cout << "Retrans successfully segment: " << hung_client_seg << " for layer: " << rate  << ". New # layers: " << segment[retrans_seg_id].num_layers<< std::endl;
       }
-      else if (retrans_num_remaining == 0 || termination_trigger) {  // the last segment of this retrasmitting session
+
+      long temp_buff = (minh_client_seg+1)*hung_sd + sum_stall_duration + start_play_time - hung_sys_time;
+
+      if (temp_buff < 0)  // rebuffering before update
+      {
+        stall_while_downloading = true;
+        stall_duration_before_update = -temp_buff;
+        hung_cur_buff = 0;
+        // std::cout << "\tRebuffering while downloading. Duration: " << stall_duration_before_update;
+      }
+      else
+      {
+        hung_cur_buff = temp_buff; //-= m_update_diff_time;
+      }
+
+      // std::cout << "\t***Note: Update stats: retransmitted layer\n" << std::endl;
+
+      // if (retrans_retransmitted_seg_recorder.at(retrans_retransmitted_seg_recorder.size()-1) == hung_client_seg || termination_trigger) // the last segment of this retrasmitting session
+      // {
         retrans_transmitting = false;
         termination_trigger = false;
         termination_finish = true;
-        if (next_num_remaining == 0){
-          retrans_transmitting_period = false;
-        }
-        std::cout << "[INFO] RETRANS DONE! retrans_num_remaining: " << retrans_num_remaining << std::endl;
-      }  
-      else {
-        // do nothing
-      }
+        // std::cout << "[RETRANS] Retrans done " << retrans_transmitting<< std::endl;
+      // }  
     }
-    else if (termination_trigger){
-      std::cout << "============================================= termination_trigger ===========" << std::endl;
-      termination_trigger = false;
-    }
-    else {  // NEXT SEGMENT STREAMS
-      next_num_remaining--;
-      std::cout << "[INFO] next_num_remaining: " << next_num_remaining << std::endl;
-      minh_cur_seg_id ++;
-      hung_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(  // to compute buffer after donload each normal segment
-                      get_time() - client->timing.connect_end_time).count();
+    else 
+    {    // this layer is next segment
       // to measure buffer
       long seg_download_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                                  req->timing.response_end_time - req->timing.response_start_time).count();                        
+                                  req->timing.response_end_time - req->timing.response_start_time).count();   
 
-      std::cout << "[INFO] NEW SEGMENT downloaded in " << (seg_download_time_us / 1000) << "ms";  
+      long temp_buff = (minh_client_seg+1)*hung_sd + sum_stall_duration + start_play_time - hung_sys_time;                                                       
+
+      std::cout << "[INFO] NEW SEGMENT measuared throughput in " << (seg_download_time_us / 1000) << "ms";  
 
       std::cout << "\t with whole thrp: " << hung_inst_thrp  << "Kbps" << std::endl;
 
-      // Compute RTT but be careful because of live streaming. RTT has to be computed by PING
-      hung_seg_recorder.push_back(hung_client_seg);
-      hung_time_recorder.push_back(hung_sys_time);
-      time_download_recorder.push_back(seg_download_time_us/1000);
-      hung_rate_recorder.push_back(rate);
-      minh_data_downloaded_recorder.push_back(req->response_len) ;
-      minh_rate_ret_id_recorder.push_back(getIndexByRate(rate)+1);
-
       // compute buffer -S
-      // [20.06.30] correct some mistake MOD-S
-      #if 0
-      if (hung_on_buffering){
-          if (minh_rebuff_sent)
-            hung_cur_buff += hung_sd;
-          else
-            hung_cur_buff = 0;
-      }
-      else{
-          hung_cur_buff = (hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time)) > 0 ?
-                          hung_cur_buff + hung_sd - (hung_sys_time - hung_last_adapt_time) : 
-                          0;
-      }
-      #else
-      if (!rebuffering_while_download){
-        if (!hung_on_buffering){
-          long temp_buff = (minh_max_next_seg_id-1)*hung_sd + minh_rebuff_duration + start_play_time - hung_sys_time;
-          if (temp_buff < 0){
-            stall_duration_before_update = -temp_buff;
-            hung_on_buffering = true;  // comment to fix the buffer prob after rebuffering while downloading
-            hung_cur_buff = hung_sd;
-            rebuffering_while_download = true;
-            minh_rebuff_start = std::chrono::duration_cast<std::chrono::milliseconds>(
-                   get_time() - client->timing.connect_end_time).count() - stall_duration_before_update; 
-            minh_stall_start_time.push_back(minh_rebuff_start);
-
-            std::cout << "\tRebuffering while downloading. Duration (ms): " << stall_duration_before_update << std::endl;
-          }
-          else {
-            hung_cur_buff = temp_buff + hung_sd;
-          }
-        }
-        else {
-          std::cout << "\t [INFO] " << __func__ <<"(): line " <<__LINE__ << std::endl; 
+      layer_id = cur_layer_id;
+      if (hung_on_buffering)
+      {
           hung_cur_buff += hung_sd;
-        }  
       }
-      else {
-        std::cout << "\t [INFO] " << __func__ <<"(): line " <<__LINE__ << std::endl; 
-        hung_cur_buff += hung_sd;
-        hung_on_buffering = true;
-      }
-      
-      #endif 
-      // [20.06.30] correct some mistake MOD-E
-      hung_buff_recorder.push_back(hung_cur_buff);
-      hung_last_adapt_time = hung_sys_time; 
-      // compute buffer -E  
-
-
-/* 191029 Minh [live streaming for retransmission] ADD-S*/        
-      minh_rate_recorder.push_back(rate);
-      minh_rate_old_id_recorder.push_back(getIndexByRate(rate)+1);
-      normal_thrp_recorder.push_back(hung_inst_thrp);
-
-      if (retrans_transmitting && retrans_transmitting_period){ // if RETRANSMITTING is in process
-        double temp_thrp = 0;
-
-        hung_thrp_recorder.push_back(hung_inst_thrp);
-        minh_cur_thrp = hung_inst_thrp;
-
-        if (next_num_remaining <= 0){ // all next segments are downloaded
-          retrans_transmitting_period = false;
-          std::cout << "[INFO] NEXT DONE. retrans_num_remaining: " << retrans_num_remaining << std::endl;
+      else if (layer_id == 1) // this is the first layer of current segment
+      {
+        // if (hung_cur_buff + hung_sd - m_update_diff_time < 0) // rebuffering before update
+        if (temp_buff < 0)
+        {
+          stall_while_downloading = true;
+          stall_duration_before_update = -temp_buff; //-(hung_cur_buff + hung_sd - m_update_diff_time);
+          hung_cur_buff = 0;
+          std::cout << "\tRebuffering while downloading. Duration: " << stall_duration_before_update;
         }
-      } 
-      else if (!retrans_transmitting && retrans_transmitting_period){ // NEU da download all retransmitted segments and this next segment is the last one
-        hung_thrp_recorder.push_back(hung_inst_thrp);
-        minh_cur_thrp = hung_inst_thrp;
+        else
+        {
+          hung_cur_buff = temp_buff; //hung_cur_buff + hung_sd - m_update_diff_time;
+        }
       }
-      else{ // no retransmitting
-        hung_thrp_recorder.push_back(hung_inst_thrp); 
-        minh_cur_thrp = hung_inst_thrp;
-      }
-/* 191029 Minh [live streaming for retransmission] ADD-E*/          
-    }    
+      else  //this is an EL of current segment
+      {
+        // if (hung_cur_buff - m_update_diff_time < 0)    // rebuffering before update
+        if (temp_buff < 0)
+        {
+            stall_while_downloading = TRUE;
+            stall_duration_before_update = -temp_buff; //-(hung_cur_buff - m_update_diff_time);
+            hung_cur_buff = 0;
+            std::cout << "\tRebuffering while downloading. Duration: " << stall_duration_before_update;
+        }       
+        else{
+            hung_cur_buff = temp_buff; //hung_cur_buff - m_update_diff_time;
+        }   
+      }    
+    }   
+
+    // recorder
+    std::cout << "Recording segment " << hung_client_seg << " layer "<< layer_id << std::endl;
+    segment[hung_client_seg].layer[layer_id-1].bitrate = MINH_BITRATE_SET[hung_client_seg % 12][layer_id-1];
+    segment[hung_client_seg].layer[layer_id-1].throughput = hung_inst_thrp;
+    segment[hung_client_seg].layer[layer_id-1].buffer = hung_cur_buff;
+    segment[hung_client_seg].layer[layer_id-1].download_time = std::chrono::duration_cast<std::chrono::milliseconds>(            // time from beginning to end segment
+                                                                            req->timing.response_end_time - req->timing.response_start_time).count(); 
+    segment[hung_client_seg].layer[layer_id-1].start_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                                            req->timing.response_start_time - client->timing.connect_end_time).count();
+    segment[hung_client_seg].layer[layer_id-1].end_download_time   = hung_sys_time;
+    segment[hung_client_seg].layer[layer_id-1].stream_id   = req->stream_id;
+
+
 
     sub_downloaded_data = 0;
     sub_start_time = sub_end_time;
-    std::cout << "[DONE] received SEG # " << hung_client_seg << " Buff: " << hung_cur_buff << std::endl;
-    std::cout << "-------------------------------------------------------------------------------------------------------------------------" << std::endl;       
-/* 191103 Minh [Kpush with retransmission] ADD-E*/        
-  } else {
-    std::cout << "type of path: " << minh_get_type_from_uri_2(req->make_reqpath()) << std::endl;
-    std::cout << "retrans_transmitting: " << retrans_transmitting << "\t"
-              << "retrans_transmitting_period: " << retrans_transmitting_period << '\n'
-              << "RETRANS num remaining: " << retrans_num_remaining << "\t"
-              << "NEXT num remaining: " << next_num_remaining << std::endl;
-
-    if ( (hung_client_seg < hung_MAX_SEGMENTS) &&
-         (minh_get_type_from_uri_2(req->make_reqpath()) == "rebuff" ||
-            (retrans_num_remaining == 0 && retrans_transmitting == false && minh_get_type_from_uri_2(req->make_reqpath()) == "req_vod") || 
-            (next_num_remaining == 0 && retrans_transmitting_period == false && minh_get_type_from_uri_2(req->make_reqpath()) == "retrans"))) {
-      std::cout << "[INFO] New pushing cycle " << std::endl;
-      if (minh_retransmission_method == PROPOSAL){
-        retransmission_method(client);
+    std::cout << "[" << hung_sys_time << "][DONE] receive SEG # " << hung_client_seg  << " layer_id: " << layer_id << " Buff: " << hung_cur_buff << std::endl;
+    // std::cout << segment[hung_client_seg].layer[layer_id-1].start_download_time << " "
+    //           << segment[hung_client_seg].layer[layer_id-1].end_download_time << " "
+    //           << segment[hung_client_seg].layer[layer_id-1].bitrate << " "
+    //           << segment[hung_client_seg].layer[layer_id-1].throughput << " "
+    //           << segment[hung_client_seg].layer[layer_id-1].buffer << " "
+    //           << segment[hung_client_seg].layer[layer_id-1].download_time << std::endl;
+    // std::cout << "-------------------------------------------------------------------------------------------------------------------------" << std::endl;       
+  } 
+  else // END flag
+  {
+      if (minh_client_seg < hung_MAX_SEGMENTS && 
+          minh_get_type_from_uri_2(req->make_reqpath()) != "retrans")
+      {
+        retransmission_method_SVC(client);
       }
-      else if (minh_retransmission_method == SQUAD){
-        retransmission_SQUAD_method(client);
-      }
-      else if (minh_retransmission_method == NONE){
-        retransmission_method(client);
-      }
-      else {
-        std::cerr << "[ERROR] Don't know what to run " << std::endl;
-        exit(EXIT_FAILURE);
-      }
-    }
-    // }
   }
-
-  // Hung: receive stream_id
- // std::cout << "[DONE] receive stream " << req->stream_id << " Thrp: " << hung_inst_thrp << " Buff: " << hung_cur_buff << hung_client_seg << std::endl << std::endl;
-  //print_timer();
 
   if (client->all_requests_processed()) {
     nghttp2_session_terminate_session(session, NGHTTP2_NO_ERROR);
@@ -4084,8 +3877,11 @@ struct RequestResult {
 namespace {
 void print_stats(const HttpClient &client) {
   std::cout << "***** Statistics *****" << std::endl;
+  // kill dummynet
+  const string dummynet_kill = "sudo killall bash ./complex_4G_PL_" + std::to_string(minh_packet_loss) + ".sh";
+  int a = system(dummynet_kill.c_str());
 
-// [20.06.25] * Create result dir automatically * ADD-S
+  // get date and time and then create folder with this name
   time_t  rawTime;
   struct tm* timeInfo;
   char timeBuff[20];
@@ -4094,34 +3890,25 @@ void print_stats(const HttpClient &client) {
   timeInfo = localtime(&rawTime);
   strftime(timeBuff, 20, "%F_%H%M%S", timeInfo);
 
-  // kill dummynet
-  const string dummynet_file = "complex_" + TRACE_STRING[minh_trace_mode] + "_"
-                                + "PL_" + std::to_string(minh_packet_loss) + ".sh";
-  std::cout << "Dummynet file: " << dummynet_file << std::endl;                                               
-  const string dummynet_kill = "sudo killall bash ./" + dummynet_file;
-  std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_kill << std::endl;
-  if (system(dummynet_kill.c_str())) {std::cout << "Could not Kill DummyNet" << std::endl; }
-
   // create a direction
-  const string result_direction = "/home/minh/Documents/http_result/H2BR_HEVC/NETWORK_"  + 
-                                  TRACE_STRING[minh_trace_mode]                 +
-                                  "/PL_"      + std::to_string(minh_packet_loss)+
-                                  "/SD_"      + std::to_string(hung_sd) + "ms"  + 
-                                  "/ABR_"     + ABR_STRING[minh_ABR]            + 
-                                  "/RETRANS_" + RETRANS_METHOD_STRING[minh_retransmission_method] + 
-                                  "_"         + H2BR_MODE_STRING[minh_optimize_bitrate]           +
-                                  "/"         + std::string(timeBuff);
+  string result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/Buf_"   + 
+                            std::to_string(buff_max/1000) + 
+                            "/PL_"    + std::to_string(minh_packet_loss)     +
+                            "/AGG/" +
+                            std::string(timeBuff);  
+
   const string create_directories = "mkdir -p " + result_direction;                           
   int a_1 = system(create_directories.c_str()); 
 
-  // string temp1 = "complex_rtt_";
-  // string temp2 = ".sh ";
-  string cp_files = "sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/"
-                    + dummynet_file + " " + result_direction;     
-  std::cout << "cp_files: " << cp_files << std::endl; 
+  // int b = system("sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/complex_4g.sh /home/minh/Documents/http_result/Proposed/");
 
+  string temp1 = "./complex_4G_PL_";
+  string temp2 = ".sh ";
+  string cp_files = 
+    "sudo cp /home/minh/HTTP2_src/nghttp2/src/nghttp.cc /home/minh/HTTP2_src/nghttp2/src/"
+    + temp1 + std::to_string (minh_packet_loss) + temp2 + result_direction;     
+  std::cout << "cp_files: " << cp_files << std::endl;                 
   int b = system(cp_files.c_str());
-// [20.06.25] * Create result dir automatically * ADD-E
 
   std::vector<Request *> reqs;
   reqs.reserve(client.reqvec.size());
@@ -4140,28 +3927,29 @@ void print_stats(const HttpClient &client) {
                       ltiming.request_start_time < rtiming.request_start_time);
             });
 
-  std::cout << R"(
-Request timing:
-  responseEnd: the  time  when  last  byte of  response  was  received
-               relative to connectEnd
- requestStart: the time  just before  first byte  of request  was sent
-               relative  to connectEnd.   If  '*' is  shown, this  was
-               pushed by server.
-      process: responseEnd - requestStart
-         code: HTTP status code
-         size: number  of  bytes  received as  response  body  without
-               inflation.
-          URI: request URI
+//   std::cout << R"(
+// Request timing:
+//   responseEnd: the  time  when  last  byte of  response  was  received
+//                relative to connectEnd
+//  requestStart: the time  just before  first byte  of request  was sent
+//                relative  to connectEnd.   If  '*' is  shown, this  was
+//                pushed by server.
+//       process: responseEnd - requestStart
+//          code: HTTP status code
+//          size: number  of  bytes  received as  response  body  without
+//                inflation.
+//           URI: request URI
 
-see http://www.w3.org/TR/resource-timing/#processing-model
+// see http://www.w3.org/TR/resource-timing/#processing-model
 
-sorted by 'complete'
+// sorted by 'complete'
 
-id  responseEnd responseStart requestStart  process code size request path)" << std::endl;
+// id  responseEnd responseStart requestStart  process code size request path)" << std::endl;
 
   // Hung: 
   const auto &base = client.timing.connect_end_time;
-  for (const auto &req : reqs) {
+  for (const auto &req : reqs) 
+  {
     auto response_end = std::chrono::duration_cast<std::chrono::microseconds>(
         req->timing.response_end_time - base);
     auto response_start = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -4183,213 +3971,130 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
               << req->make_reqpath() << std::endl;
   }
 
+  // // Hung: Doan nay tinh thoi gian, sau do in ra (sua roi nhe)
+  ofstream MyExcelFile, log, parameters;
+/* 191103 Minh [Kpush with retransmission] DEL-S*/
+  string name = "/home/minh/Documents/http_result/Proposed/SVC";
+  MyExcelFile.open(result_direction + "/SVC_statistics.ods");
+  MyExcelFile << "StartTime\t EndTime\t SegID\t #Layers\t LayerID\t Bitrate\t Throughput\t Buffer\t StreamID\t DownloadTime" << endl;  
+  std::cout << std::endl << "Our statistics: " << std::endl;
+  std::cout << "StartTime\t EndTime\t SegID\t #Layers\t LayerID\t Bitrate\t Throughput\t Buffer\t StreamID\t DownloadTime" << std::endl;
+
+  for (int seg_idx = 0; seg_idx < hung_max_seg_id_consideration; seg_idx ++)
+  {
+    // std::cout << "seg_idx: " << seg_idx << std::endl;
+      sum_avg_quality += segment[seg_idx].num_layers;
+
+      if (seg_idx < hung_max_seg_id_consideration-1 && 
+                    segment[seg_idx].num_layers > segment[seg_idx+1].num_layers)
+      {
+          sum_switch_num ++;
+          sum_avg_switch += segment[seg_idx].num_layers - segment[seg_idx+1].num_layers;
+      }
+
+      for (int layer_idx = 0; layer_idx < segment[seg_idx].num_layers; layer_idx ++)
+      {
+          // if (!segment[seg_idx].layer[layer_idx].throughput){ continue;}   // in case of terminated layers
+
+          std::cout <<
+              segment[seg_idx].layer[layer_idx].start_download_time/1000 << '\t' <<
+              segment[seg_idx].layer[layer_idx].end_download_time/1000 << '\t' << 
+              seg_idx << '\t' <<
+              segment[seg_idx].num_layers << '\t' <<
+              layer_idx << '\t' <<
+              segment[seg_idx].layer[layer_idx].bitrate << '\t' <<
+              segment[seg_idx].layer[layer_idx].throughput << '\t' <<
+              segment[seg_idx].layer[layer_idx].buffer/1000 << '\t' <<
+              segment[seg_idx].layer[layer_idx].stream_id << '\t' <<
+              segment[seg_idx].layer[layer_idx].download_time << std::endl;  
+
+          MyExcelFile <<
+              segment[seg_idx].layer[layer_idx].start_download_time/1000 << '\t' <<
+              segment[seg_idx].layer[layer_idx].end_download_time/1000 << '\t' << 
+              seg_idx << '\t' <<
+              segment[seg_idx].num_layers << '\t' <<
+              layer_idx << '\t' <<
+              segment[seg_idx].layer[layer_idx].bitrate << '\t' << 
+              segment[seg_idx].layer[layer_idx].throughput << '\t' <<
+              segment[seg_idx].layer[layer_idx].buffer/1000 << '\t' <<
+              segment[seg_idx].layer[layer_idx].stream_id << '\t' <<
+              segment[seg_idx].layer[layer_idx].download_time << std::endl;           
+      }
+  }
+
+  MyExcelFile.close();
+
   double avg_ret_bitrate = 0;
   double avg_new_bitrate = 0;
   double avg_ret_idx = 0;
   double avg_old_idx = 0;
 
   double lowest_buff = 100000;
-  // double amount_waste_data = 0;
 
   int    num_switch = 0;
   int    num_switch_no_retrans = 0;
-  // int    num_success_retrans = 0;
 
-  // // Hung: Doan nay tinh thoi gian, sau do in ra (sua roi nhe)
-  ofstream MyExcelFile, log, parameters;
-/* 191103 Minh [Kpush with retransmission] DEL-S*/
+  parameters.open(result_direction + "/summary.txt");
 
-  int m_max_seg_idx = MIN(hung_MAX_SEGMENTS, hung_rate_recorder.size());
-  MyExcelFile.open(result_direction + "/statistic.ods");
-  MyExcelFile << "Time\tThrp\tRe_Bitrate\tBitrate\tBuffer\tRetrans\tDownloadTime\tRe_id\tOl_id\tDataDownloaded" << endl;  
-  std::cout << std::endl << "The statistics: " << std::endl;
-  std::cout << "Index \tTime \tThrp \tRate \tM_Rate \tBuffer \tRetrans \tRe_id \tol_id" << std::endl;
+  parameters << "AGG {AGG, CURSOR, BACKFILLING}: %" << minh_ABR << " \tRetrans_enable: " << minh_retrans_extention << std::endl;
+  parameters << "Buffer size: " << buff_max << "\tBuffer exit threshold: " << MINH_REBUF_THRESHOLD_EXIT
+             << "\t# segs inconsideration: " << hung_max_seg_id_consideration <<  std::endl;
 
-  for (int i = 0; i < m_max_seg_idx; i++) {
-    int temp_bitrate_diff = hung_rate_recorder.at(i) - minh_rate_recorder.at(i);
+  parameters << "- sum_avg_quality = " << sum_avg_quality/hung_max_seg_id_consideration << " layers out of " << MAX_LAYER_ID << " layers\n" << std::endl;
+  parameters << "- sum_switch_num = " << sum_switch_num << std::endl;
+  if (sum_switch_num > 0)
+    parameters << "- sum_avg_switch_" << sum_avg_switch << " = " << sum_avg_switch/sum_switch_num << std::endl;
+  else
+    parameters << "- sum_avg_switch = " << 0 << std::endl;
+  
+  parameters << "- sum_stall_num = "  << minh_rebuff_duration_recorder.size() << std::endl;
+  parameters << "- sum_stall_duration = " << minh_rebuff_duration/1000 << " s\n" << endl;
+  parameters << "- sum_retrans_num = " << retrans_num << std::endl;
+  parameters << "- sum_terminate_num = " << retrans_num_termination << endl;
 
-    // if (temp_bitrate_diff > 0)
-    // {
-    //   num_success_retrans ++;
-    //   amount_waste_data += minh_data_downloaded_recorder.at(i); //in Byte
-    // }
-
-    std::cout << hung_seg_recorder.at(i)          << "\t"
-              << hung_time_recorder.at(i)/1000.0  << "\t"
-              << hung_thrp_recorder.at(i)         << "\t"
-              << hung_rate_recorder.at(i)         << "\t"
-              << minh_rate_recorder.at(i)         << "\t"
-              << hung_buff_recorder.at(i)/1000.0  << "\t" 
-              << temp_bitrate_diff                << "\t"
-              << minh_rate_ret_id_recorder.at(i)  << "\t"
-              << minh_rate_old_id_recorder.at(i)  <<std::endl;
-
-    
-    MyExcelFile << hung_time_recorder.at(i)/1000.0  << '\t'  
-                << hung_thrp_recorder.at(i)         << '\t'
-                << hung_rate_recorder.at(i)         << '\t'
-                << minh_rate_recorder.at(i)         << '\t'
-                << hung_buff_recorder.at(i)/1000.0  << '\t'
-                << temp_bitrate_diff                << '\t'
-                << time_download_recorder.at(i)/1000<< '\t'
-                << minh_rate_ret_id_recorder.at(i)  << '\t'
-                << minh_rate_old_id_recorder.at(i)  << '\t'
-                << minh_data_downloaded_recorder.at(i) << endl;
-    
-  }
-
-
-  MyExcelFile.close();
-
-  log.open(result_direction + "/retrans_buffer_recorder.txt"); 
-  log << "Seg_id\tAvai_time" << endl;
-  for (int n = 0; n < retrans_buffer_recorder.size(); n++){
-    log << retrans_retransmitted_seg_recorder.at(n) +1 << '\t'
-        << retrans_buffer_recorder.at(n) << endl;
-  }
-  log << endl << "--------------------- Pri_new / Pri_retrans ----------------------------" << endl;
-  for (auto a = minh_pri_proportion_recorder.begin(); a != minh_pri_proportion_recorder.end(); ++a){
-    log << *a << endl;
-  }
-  log << endl << "--------------------- Terminated segments ----------------------------" << endl;
-  if (minh_retrans_terminated_seg_recorder.size() > 0){
-    for (auto a = minh_retrans_terminated_seg_recorder.begin(); a != minh_retrans_terminated_seg_recorder.end(); a++){
-      log << *a << endl;
+  parameters << "terminated segment lists " << std::endl;
+  if (terminated_seg_id.size() > 0){
+    for (int i = 0; i < terminated_seg_id.size(); i ++){
+      parameters << terminated_seg_id.at(i) << std::endl;
     }
   }
-  log.close();
 
-  for (int i = 0; i < m_max_seg_idx; i ++){
-    // avg_bitrate
-    avg_ret_bitrate += hung_rate_recorder.at(i);
-    avg_new_bitrate += minh_rate_recorder.at(i);
-
-    // avg_idx
-    avg_ret_idx += minh_rate_ret_id_recorder.at(i);
-    avg_old_idx += minh_rate_old_id_recorder.at(i);
-
-    // lowest buff
-    if (hung_buff_recorder.at(i) < lowest_buff && i >= hung_tar_buff/hung_sd)
-      lowest_buff = hung_buff_recorder.at(i);
-
-    // num_switch after retrans
-    if (i != hung_rate_recorder.size()-1 && hung_rate_recorder.at(i) > hung_rate_recorder.at(i+1))
-      num_switch ++;
-
-    // num_switch_no_retrans
-    if (i != minh_rate_recorder.size()-1 && minh_rate_recorder.at(i) > minh_rate_recorder.at(i+1))
-      num_switch_no_retrans ++;      
-  }
-
-  avg_ret_bitrate = avg_ret_bitrate*1.0/m_max_seg_idx;
-  avg_new_bitrate = avg_new_bitrate*1.0/m_max_seg_idx;
-
-  avg_ret_idx     = avg_ret_idx*1.0/m_max_seg_idx;
-  avg_old_idx     = avg_old_idx*1.0/m_max_seg_idx;
-
-  parameters.open(result_direction + "/parameters.txt");
-  parameters << "- hung_rate_set = {";
-  for (int a = 0; a < hung_rate_set.size(); a ++){
-    parameters << hung_rate_set.at(a) << ", ";
-  }
-
-  // minh_rebuff_duration = 0;
-  // if (minh_rebuff_duration_recorder.size() > 0){
-  //   for (int i = 1; i < minh_rebuff_duration_recorder.size(); i++){
-  //     minh_rebuff_duration += minh_rebuff_duration_recorder.at(i);
-  //   }
-  // }
-
-  parameters  << "};" << '\n'
-              << "[CONFIG] Segment duration: " << hung_sd << "\n"
-              << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
-              << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
-              << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
-              << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
-              << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
-              << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
-              << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
-
-              << "- hung_tar_buff = " << hung_tar_buff << '\n'
-             << "- retrans_buff_thres = " << retrans_buff_thres << '\n'
-             << "- retrans_buff_trigger_on "<< retrans_buff_trigger_on << '\n'
-             << "- retrans_buff_cancel "    << retrans_buff_cancel << '\n'
-             << "- duc_buff_low = " << duc_buff_low << '\n'
-             << "- alpha = " << alpha << '\n'
-             << "- condition_thres = " << condition_thres << '\n'
-             << "- division_retrans_seg_margin = " << division_retrans_seg_margin << '\n'
-             << "- division_retrans_buff_margin = " << division_retrans_buff_margin << '\n'
-             << "-------------------------------------------------------------------\n"
-             << "- SARA_I = " << I << '\n'
-             << "- SARA_B_a = " << B_a << '\n'
-             << "- SARA_B_b = " << B_b << '\n' 
-             << "- SARA_B_m = " << B_m << "\n\n"
-             << "- SQUAD squad_buff_high = " << squad_buff_high << '\n'
-             << "- SQUAD squad_buff_low = " << squad_buff_low << '\n'
-             << "-------------------------------------------------------------------\n"
-             << "# requests: "      << num_of_request << '\n'
-             << "Avg RET-bitrate: " << avg_ret_bitrate<< '\n'
-             << "Avg RET-idx: "     << avg_ret_idx    << '\n'
-             << "Avg NEW-bitrate: " << avg_new_bitrate<< '\n'
-             << "Avg old-idx: "     << avg_old_idx    << '\n'
-             << "Lowest buff: "     << lowest_buff    << '\n'
-             << "# switches: "      << num_switch     << '\n'
-             << "# switches_noRET: "<< num_switch_no_retrans << '\n'
-             << "# termination: "   << retrans_num_termination << '\n'
-             << "# successfully downloaded segments: " << retrans_buffer_recorder.size() << '\n'
-             << "Amount waste data (KByte): " << (double) amount_waste_data/1000 << '\n' // should include terminated segment.
-             << "# rebuff: "        << rebuf_num << '\n'
-             << "rebuff duration (ms): " << minh_rebuff_duration << '\n'
-             << "startup phase (ms): " << start_play_time << '\n'
-             << "-------------------------------------------------------------------"
-             << " Num of seg for each NEW-seg request\n"
-             << endl;
-  for (int a = 0; a < minh_next_num_recorder.size(); a++){
-    parameters << minh_next_num_recorder.at(a) << endl;
-  }  
-
-  parameters << "-----------------------"
-             << " Num of seg for each RETRANS-seg request"
-             << endl;
-  for (int a = 0; a < minh_retrans_num_recorder.size(); a++){
-    parameters << minh_retrans_num_recorder.at(a) << endl;
-  } 
-
-  parameters << "-----------------------"
-             << " Retrans buffer recorder"
-             << endl;
-  for (int a = 0; a < retrans_buffer_recorder.size(); a++){
-    parameters << retrans_buffer_recorder.at(a) << endl;
-  }        
-
-  parameters << "-----------------------"
-             << " Stall timestamp"
-             << endl;
-  if (minh_stall_start_time.size() > 0)             
-    for (int a = 0; a < minh_stall_start_time.size(); a++){
-      parameters << minh_stall_start_time.at(a) << endl;
-    } 
-
-  parameters << "-----------------------"
-             << " Stall duration"
-             << endl;
-  if (minh_rebuff_duration_recorder.size() > 1)             
-    for (int a = 1; a < minh_rebuff_duration_recorder.size(); a++){
-      parameters << minh_rebuff_duration_recorder.at(a) << endl;
-    }  
-  
   parameters.close();
+
+  // std::cout << "=== Bitrates ladders ===\n";
+  // for (int i = 0; i < NUM_SEGMENTS; i ++){
+  //   for (int j = 0; j < MAX_LAYER_ID; j++){
+  //     std::cout << MINH_SUM_BITRATE_SET[i][j] << '\t';
+  //   }
+  //   std::cout << '\n';
+  // } 
  
   std::cout << "============================= THE END =====================" << '\n';
 
-  std::cout   << "[CONFIG] Segment duration: " << hung_sd << "\n"
-              << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
-              << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
-              << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
-              << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
-              << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
-              << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
-              << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%" << std::endl;
+  if (minh_retrans_extention == true){
+    std::cout << "Retransmission extention: YES" << std::endl;
+    if (minh_retransmission_method == PROPOSAL){
+      std::cout << "Retransmission method: PROPOSAL" << std::endl;
+    }
+    else if (minh_retransmission_method == SQUAD){
+     std::cout << "Retransmission method: SQUAD" << std::endl; 
+    }
+  }
+  else {
+    std::cout << "Retransmission extention: NO" << std::endl;   
+  }
+
+  switch(minh_ABR){
+    case AGGRESSIVE:
+      std::cout << "ABR: AGGRESSIVE" << std::endl;
+      break;
+     case SARA:
+      std::cout << "ABR: SARA" << std::endl;
+      break;
+    case BBA:
+      std::cout << "ABR: BBA" << std::endl;
+      break;             
+  }  
           
 }
 } // namespace
@@ -4517,17 +4222,16 @@ int communicate(
         dang_data_prd = std::get<1>(req);
         dang_data_length = std::get<2>(req);
         dang_pri_spec = pri_spec;  
-        // std::cout << "11111111111111111111111111111111111" << std::endl; 
-        // client.add_request(std::get<0>(req), std::get<1>(req), std::get<2>(req),
-        //                pri_spec);        
-        minh_get_rate_set(hung_sd);
+        // if (system("sudo ./complex_4g.sh &")) {std::cout << "could not run DummyNet" << std::endl; }
+        string dummynet_start = "sudo ./complex_4G_PL_" + std::to_string(minh_packet_loss) + ".sh &";
+        int a = system(dummynet_start.c_str());        
+        minh_get_rate_set(hung_sd, 1);
         minh_get_ABR_parameters(minh_ABR);
         // if (minh_network_ack == YES){
         //   minh_get_origin_thrp();
         // }
-        minh_stall_start_time.push_back(0);
-        minh_rebuff_start = 0;
-        hung_req_vod_rebuff(&client, false);
+        segment[0].num_layers = 1;
+        hung_req_vod_rebuff(&client, 0, false);
         break;
       }
     }
@@ -4923,27 +4627,6 @@ Options:
   -r, --har=<PATH>
               Output HTTP  transactions <PATH> in HAR  format.  If '-'
               is given, data is written to stdout.
-
-  // [20.06.25] * Add more option in command lines * ADD-S
-  -R, --retrans-method=<M>
-              Determine which retransmission method is used. Default:
-              H2BR.
-  -A, --abr=<M>
-              Determine which ABR is used. Default: AGG
-  --enable-retrans
-              To enable retransmission extention. Default: false.
-  -N, --network-mode=<N>
-              Determine the type of network to run experiments.
-              Default: TRACE_4G
-  -S, --segment-duration=<N>
-              Determine the segment duration used: 1000ms, 2000ms,...
-  -o, --optimize-bitrate
-              Allow a segment to be retransmitted multiple times to 
-              optimize average video quality
-  -P, --packet-loss=<N>
-              Determine the packet loss of the network trace.
-  // [20.06.25] * Add more option in command lines * ADD-E    
-
   --color     Force colored log output.
   --continuation
               Send large header to test CONTINUATION.
@@ -5003,14 +4686,6 @@ int main(int argc, char **argv) {
         {"header-table-size", required_argument, nullptr, 'c'},
         {"padding", required_argument, nullptr, 'b'},
         {"har", required_argument, nullptr, 'r'},
-        // [20.06.25] * Add more option in command lines * ADD-S
-        {"retrans-method", required_argument, nullptr, 'R'},
-        {"abr", required_argument, nullptr, 'A'},
-        {"network-mode", required_argument, nullptr, 'N'},
-        {"packet-loss", required_argument, nullptr, 'P'},
-        {"segment-duration", required_argument, nullptr, 'S'},
-        {"optimize-bitrate", required_argument, nullptr, 'o'},
-        // [20.06.25] * Add more option in command lines * ADD-E
         {"cert", required_argument, &flag, 1},
         {"key", required_argument, &flag, 2},
         {"color", no_argument, &flag, 3},
@@ -5024,9 +4699,8 @@ int main(int argc, char **argv) {
         {"max-concurrent-streams", required_argument, &flag, 12},
         {"expect-continue", no_argument, &flag, 13},
         {"encoder-header-table-size", required_argument, &flag, 14},
-        // // [20.06.25] * Add more option in command lines * ADD-S
-        // {"enable-retrans", no_argument, &flag, 15},
-        // // [20.06.25] * Add more option in command lines * ADD-E
+        {"buffer-max", required_argument, nullptr, 'B'},
+        {"packet-loss", required_argument, nullptr, 'P'},
         {nullptr, 0, nullptr, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "M:Oab:c:d:gm:np:r:hH:vst:uw:W:",
@@ -5160,225 +4834,128 @@ int main(int argc, char **argv) {
       config.min_header_table_size = std::min(config.min_header_table_size, n);
       break;
     }
-    // [20.06.25] * Add more option in command lines * ADD-S
-    case 'R':
-    {
-      if (strcmp(optarg, "NONE") == 0)
-      {
-        minh_retrans_extension = false;
-        minh_retransmission_method = NONE;
+// MINH 20.06.08 [Add more command options] ADD-S    
+    case 'B':
+      buff_max = std::stoi(optarg);
+      switch(buff_max){
+        case 20000:
+          MINH_REBUF_THRESHOLD_EXIT = 16000;
+          break;
+        case 15000:
+          MINH_REBUF_THRESHOLD_EXIT = 10000;
+          break;
+        case 10000:
+          MINH_REBUF_THRESHOLD_EXIT = 6000;
+          break;
+        case 5000:
+          MINH_REBUF_THRESHOLD_EXIT = 3000;
+          break;                    
       }
-      else if (strcmp(optarg, "PROPOSAL") == 0)
-      {
-        minh_retrans_extension = true;
-        minh_retransmission_method = PROPOSAL;
-      }
-      else if (strcmp(optarg, "SQUAD") == 0)
-      {
-        minh_retrans_extension = true;
-        minh_retransmission_method = SQUAD;
-      }
-      else
-      {
-        std::cerr << "[ERROR] This [" << optarg << "] retransmisison method is NOT supported. Methods supported are: \n";
-        for (int i = 0; i < sizeof(RETRANS_METHOD_STRING); i++){
-          std::cerr << RETRANS_METHOD_STRING[i] << '\n';
-        }
-        exit(EXIT_FAILURE);
-      }
-      break;
-    }
-    case 'A':
-    {
-      if (strcmp(optarg, "AGG") == 0)
-      {
-        minh_ABR = AGG;
-      }
-      else if (strcmp(optarg, "SARA") == 0)
-      {
-        minh_ABR = SARA;
-      }
-      else if (strcmp(optarg, "BBA") == 0)
-      {
-        minh_ABR = BBA;
-      }
-      else {
-        std::cerr << "[ERROR] This ABR [" << optarg <<"] is NOT supported. ABRs supported are: \n";
-        for (int i = 0; i < sizeof(ABR_STRING); i++){
-          std::cerr << ABR_STRING[i] << '\n';
-        }
-        exit(EXIT_FAILURE);        
-      }
-      break;
-    }
-    case 'N':
-    {
-      if (strcmp(optarg, "3G") == 0){
-        minh_trace_mode = TRACE_3G;
-      }
-      else if (strcmp(optarg, "4G") == 0){
-        minh_trace_mode = TRACE_4G;
-      }
-      else if (strcmp(optarg, "5G") == 0){
-        minh_trace_mode = TRACE_5G;
-      }
-      else {
-        std::cerr << "This Network trace [" << optarg <<"] is NOT supported. Network traces supported are: \n";
-        for (int i = 0; i < sizeof(TRACE_STRING); i++){
-          std::cerr << TRACE_STRING[i] << '\n';
-        }
-        exit(EXIT_FAILURE);        
-      }
-      break;
-    }
+      hung_tar_buff = MINH_REBUF_THRESHOLD_EXIT;     
+      std::cout << "[CONFIG] buffer_max = " << buff_max  << "ms" << std::endl;
+      std::cout << "[CONFIG] hung_tar_buff = " << hung_tar_buff  << "ms" << std::endl;
+      break;   
     case 'P':
-    {
       minh_packet_loss = std::stoi(optarg);
+      std::cout << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%" << std::endl;
       break;
-    }
-    case 'S':
-    {
-      hung_sd = std::stoi(optarg);
-      hung_MAX_SEGMENTS = 300000/hung_sd;
-      break;
-    }
-    case 'o':
-    {
-      if (std::stoi(optarg) > 0)
-        minh_optimize_bitrate = true;
-      else
-        minh_optimize_bitrate = false;
-      break;
-    }
-    // [20.06.25] * Add more option in command lines * ADD-E
+// MINH 20.06.08 [Add more command options] ADD-E    
     case '?':
       util::show_candidates(argv[optind - 1], long_options);
       exit(EXIT_FAILURE);
     case 0:
       switch (flag) {
-        case 1:
-          // cert option
-          config.certfile = optarg;
-          break;
-        case 2:
-          // key option
-          config.keyfile = optarg;
-          break;
-        case 3:
-          // color option
-          color = true;
-          break;
-        case 4:
-          // continuation option
-          config.continuation = true;
-          break;
-        case 5:
-          // version option
-          print_version(std::cout);
-          exit(EXIT_SUCCESS);
-        case 6:
-          // no-content-length option
-          config.no_content_length = true;
-          break;
-        case 7:
-          // no-dep option
-          config.no_dep = true;
-          break;
-        case 9: {
-          // trailer option
-          auto header = optarg;
-          auto value = strchr(optarg, ':');
-          if (!value) {
-            std::cerr << "--trailer: invalid header: " << optarg << std::endl;
-            exit(EXIT_FAILURE);
-          }
-          *value = 0;
+      case 1:
+        // cert option
+        config.certfile = optarg;
+        break;
+      case 2:
+        // key option
+        config.keyfile = optarg;
+        break;
+      case 3:
+        // color option
+        color = true;
+        break;
+      case 4:
+        // continuation option
+        config.continuation = true;
+        break;
+      case 5:
+        // version option
+        print_version(std::cout);
+        exit(EXIT_SUCCESS);
+      case 6:
+        // no-content-length option
+        config.no_content_length = true;
+        break;
+      case 7:
+        // no-dep option
+        config.no_dep = true;
+        break;
+      case 9: {
+        // trailer option
+        auto header = optarg;
+        auto value = strchr(optarg, ':');
+        if (!value) {
+          std::cerr << "--trailer: invalid header: " << optarg << std::endl;
+          exit(EXIT_FAILURE);
+        }
+        *value = 0;
+        value++;
+        while (isspace(*value)) {
           value++;
-          while (isspace(*value)) {
-            value++;
-          }
-          if (*value == 0) {
-            // This could also be a valid case for suppressing a header
-            // similar to curl
-            std::cerr << "--trailer: invalid header - value missing: " << optarg
-                      << std::endl;
-            exit(EXIT_FAILURE);
-          }
-          config.trailer.emplace_back(header, value, false);
-          util::inp_strlower(config.trailer.back().name);
-          break;
         }
-        case 10:
-          // hexdump option
-          config.hexdump = true;
-          break;
-        case 11:
-          // no-push option
-          config.no_push = true;
-          break;
-        case 12:
-          // max-concurrent-streams option
-          config.max_concurrent_streams = strtoul(optarg, nullptr, 10);
-          break;
-        case 13:
-          // expect-continue option
-          config.expect_continue = true;
-          break;
-        case 14: {
-          // encoder-header-table-size option
-          auto n = util::parse_uint_with_unit(optarg);
-          if (n == -1) {
-            std::cerr << "--encoder-header-table-size: Bad option value: "
-                      << optarg << std::endl;
-            exit(EXIT_FAILURE);
-          }
-          if (n > std::numeric_limits<uint32_t>::max()) {
-            std::cerr << "--encoder-header-table-size: Value too large.  It "
-                         "should be less than or equal to "
-                      << std::numeric_limits<uint32_t>::max() << std::endl;
-            exit(EXIT_FAILURE);
-          }
-          config.encoder_header_table_size = n;
-          break;
+        if (*value == 0) {
+          // This could also be a valid case for suppressing a header
+          // similar to curl
+          std::cerr << "--trailer: invalid header - value missing: " << optarg
+                    << std::endl;
+          exit(EXIT_FAILURE);
         }
-        // // [20.06.25] * Add more option in command lines * ADD-S
-        // case 15:
-        // {
-        //   minh_retrans_extension = true;
-        //   break;
-        // }
-        // // [20.06.25] * Add more option in command lines * ADD-E
+        config.trailer.emplace_back(header, value, false);
+        util::inp_strlower(config.trailer.back().name);
+        break;
+      }
+      case 10:
+        // hexdump option
+        config.hexdump = true;
+        break;
+      case 11:
+        // no-push option
+        config.no_push = true;
+        break;
+      case 12:
+        // max-concurrent-streams option
+        config.max_concurrent_streams = strtoul(optarg, nullptr, 10);
+        break;
+      case 13:
+        // expect-continue option
+        config.expect_continue = true;
+        break;
+      case 14: {
+        // encoder-header-table-size option
+        auto n = util::parse_uint_with_unit(optarg);
+        if (n == -1) {
+          std::cerr << "--encoder-header-table-size: Bad option value: "
+                    << optarg << std::endl;
+          exit(EXIT_FAILURE);
+        }
+        if (n > std::numeric_limits<uint32_t>::max()) {
+          std::cerr << "--encoder-header-table-size: Value too large.  It "
+                       "should be less than or equal to "
+                    << std::numeric_limits<uint32_t>::max() << std::endl;
+          exit(EXIT_FAILURE);
+        }
+        config.encoder_header_table_size = n;
+        break;
+      }
       }
       break;
     default:
       break;
     }
   }
-
-  // [20.06.25] * Add more option in command lines * ADD-S
-  std::cout << "[CONFIG] Segment duration: " << hung_sd << "\n"
-            << "[CONFIG] Num of segments: " << hung_MAX_SEGMENTS << "\n" 
-            << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
-            << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
-            << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
-            << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
-            << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
-            << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n"
-            << std::endl;
-
-  const string dummynet_file = "complex_" + TRACE_STRING[minh_trace_mode] + "_"
-                                + "PL_" + std::to_string(minh_packet_loss) + ".sh";
-  std::cout << "Dummynet file: " << dummynet_file << std::endl;                                               
-  const string dummynet_kill = "sudo killall bash ./" + dummynet_file;
-  std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_kill << std::endl;
-  if (system(dummynet_kill.c_str())) {std::cout << "Could not Kill DummyNet" << std::endl; }
-
-
-  const string dummynet_run = "sudo ./complex_" + TRACE_STRING[minh_trace_mode] + "_"
-                                                + "PL_" + std::to_string(minh_packet_loss) + ".sh &";
-  std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
-  if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }              
-  // [20.06.25] * Add more option in command lines * ADD-E
 
   int32_t weight_to_fill;
   if (config.weight.empty()) {
@@ -5409,10 +4986,8 @@ int main(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   // Hung:
-        // const string dummynet_run = "sudo ./complex_" + TRACE_STRING[minh_trace_mode] + "_"
-        //                                               + "PL_" + std::to_string(minh_packet_loss) + ".sh &";
-        // std::cout << "\n\t[MINH] INFO: run dummynet: " << dummynet_run << std::endl;
-        // if (system(dummynet_run.c_str())) {std::cout << "could not run DummyNet" << std::endl; }
+  //if (system("./start.sh &")) {std::cout << "could not run DummyNet" << std::endl; } 
+  // if (system("sudo ./complex_4g.sh &")) {std::cout << "could not run DummyNet" << std::endl; }
 
   return nghttp2::run_app(nghttp2::main, argc, argv);
 }

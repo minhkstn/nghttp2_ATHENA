@@ -140,7 +140,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
         retrans_seg_id  = 0;
         retrans_num     = 0;
         retrans_bitrate = 0;
-        squad_terminate_check = false;
+        squad_terminate_check = true;
         error_code = 0;
         res->write_head(200);
         res->end();    
@@ -381,6 +381,7 @@ int main(int argc, char *argv[]) {
   server.handle("/retrans/", [](const request &req, const response &res) {
     // get url, e.g. http://127.0.0.1:3002/retrans/bitrate=2000/num=4/start_seg_id=34 ->retrans bitrate = 2000kbps, number of segments = 4, from segment id=34 ==> 34, 35, 36, 37
     // currently, the special symbol & is not allowed in the url
+    squad_terminate_check = false;
     std::cout << "\nRETRANS req.uri().path " << req.uri().path << std::endl;    
     std::cout << "\nRETRANS server_seg " << *server_seg << std::endl;    
     std::vector<std::string> strs;
@@ -431,7 +432,7 @@ int main(int argc, char *argv[]) {
   server.handle("/terminate_segment/", [](const request &request, const response &res) {
     std::cout << "[RECEIVED TERMINATION]" << std::endl;
 
-    squad_terminate_check = true;
+    // squad_terminate_check = true;
 
     res.write_head(200);
     res.end();
