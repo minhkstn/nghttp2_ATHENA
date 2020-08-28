@@ -1,0 +1,624 @@
+{
+    "I11": {
+    	"_comment": " This is for audio",
+        "segments": [],
+        "streamID": 42
+    },
+    "I13": {
+    	"_comment": " This is for video",
+        "segments": [
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 0
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 4
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 8
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 12
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 16
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 20
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 24
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 28
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 32
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 36
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 40
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 44
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 48
+			},
+			{
+				"bitrate": 5400,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1280x720",
+				"start": 52
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 56
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 60
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 64
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 68
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 72
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 76
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 80
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 84
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 88
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 92
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 96
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 100
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 104
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 108
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 112
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 116
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 120
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 124
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 128
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 132
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 136
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 140
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 144
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 148
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 152
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 156
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 160
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 164
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 168
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 172
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 176
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 180
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 184
+			},
+			{
+				"bitrate": 5400,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1280x720",
+				"start": 188
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 192
+			},
+			{
+				"bitrate": 5400,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1280x720",
+				"start": 196
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 200
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 204
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 208
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 212
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 216
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 220
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 224
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 228
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 232
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 236
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 240
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 244
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 248
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 252
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 256
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 260
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 264
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 268
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 272
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 276
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 280
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 284
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 288
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 292
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 4,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 296
+			}
+
+        ],
+        "streamId": 42
+    },
+    "I23": {
+        "stalling": [
+        	[0, 0.0001]],
+        "streamId": 42
+    },
+    "IGen": {
+        "device": "pc",
+        "displaySize": "3840x2160",
+        "viewingDistance": "70cm"
+    }
+}

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for SD in 1000
+for SD in 2000
 do
 	for NETWORK in 4G
 	do

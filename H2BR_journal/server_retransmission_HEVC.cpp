@@ -1,3 +1,7 @@
+/*
+* Build: g++ -o sever_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+* Run: LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./sever_retransmission_HEVC
+*/
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -10,18 +14,26 @@ using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
 using namespace boost::posix_time;
 
-int num;
+enum VIDEO {RACENIGHT, BBB};
+std::string VIDEO_STRING[2] = {"RACENIGHT", "BBB"};
 
-int segment_duration = 1000; // 1000ms
+VIDEO video = RACENIGHT;
+int   num_representation = 1; // only for RACTNIGHT: 4 or 12
+int   VIDEO_LENGTH = 0; //ms
+int   segment_duration = 20000; // 1000ms
+int   num_seg_in_video = VIDEO_LENGTH/segment_duration;
+
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
 const int MAX_SEGMENTS = 596000/segment_duration + 1;
+
 
 bool on_pushing_in_periodic_mode = false;
 bool on_steady_stage = false;
 
 /* 191030 Minh [live streaming for retransmission] ADD-S*/
 bool          retrans_check = false;
+int           num;
 int           retrans_seg_id = 0;
 int           retrans_bitrate = 0;
 int           retrans_num = 0;
@@ -58,38 +70,97 @@ void print_new_seg(int seg_id, int bitrate, bool retrans_check) {
   }
 }
 
+std::string getFileFromBitrate(int m_bitrate, int m_seg_id, std::string m_first_part_path, std::string m_end_of_name_file){
+  std::vector<int> HEVC_RaceNight_12_versions = {145, 300, 600, 900, 1600, 2400, 3400, 4500, 5800, 8100, 11600, 16800};
+  std::vector<std::string> resolution = {"640x360", "768x432", "960x540", "960x540", "960x540", "1280x720", "1280x720", "1920x1080", "1920x1080", "2560x1440", "3840x2160", "3840x2160"};
+  int version_id = 0;
+  for (; version_id < 12; version_id ++){
+    if (HEVC_RaceNight_12_versions.at(version_id) == m_bitrate)
+      break;
+  }
+  std::cout << "bitrate: " << m_bitrate << " Version idx: " << version_id << std::endl;
+  // /home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC_12versions/SD_2000ms/RaceNight_640x360_segment1_bpp12_30fps_HEVC_2s.bin
+  std::string output = m_first_part_path + "/SD_" 
+                       + std::to_string(segment_duration)+"ms/RaceNight_"
+                       + resolution.at(version_id) + "_segment"
+                       + std::to_string((m_seg_id-1)%num_seg_in_video+1) + "_bpp"
+                       + std::to_string(12-version_id) + "_" + m_end_of_name_file;
+  return output;
+}
+
 std::string getFilePath(int m_bitrate, int m_seg_id){
   std::string m_file_path;
-  switch(m_bitrate){
-    case 1800:
-      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                            +std::to_string(m_bitrate)+"/RaceNight_720x480_segment"
-                            +std::to_string((m_seg_id-1)%12+1)+"_bpp1_30fps_HEVC.bin";
-      break;
-    case 5400:
-      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                            +std::to_string(m_bitrate)+"/RaceNight_1280x720_segment"
-                            +std::to_string((m_seg_id-1)%12+1)+"_bpp2_30fps_HEVC.bin";
-      break;
-    case 9000:
-      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                            +std::to_string(m_bitrate)+"/RaceNight_1920x1080_segment"
-                            +std::to_string((m_seg_id-1)%12+1)+"_bpp3_30fps_HEVC.bin";
-      break;
-    case 18000:
-      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
-                            +std::to_string(m_bitrate)+"/RaceNight_3840x2160_segment"
-                            +std::to_string((m_seg_id-1)%12+1)+"_bpp4_30fps_HEVC.bin";
-      break;
-    default:
-      std::cerr << "[ERROR] This quality is not available: " << m_bitrate << std::endl;
-      break;
-  } 
+  std::string m_end_of_name_file;
+  std::string first_part_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC_12versions";
 
+  switch(video)
+  {
+    case RACENIGHT: 
+      if (num_representation == 4){
+        first_part_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC";
+
+        if(segment_duration == 1000){
+        m_end_of_name_file = "30fps_HEVC.bin";
+        }
+        else {
+          m_end_of_name_file = "30fps_HEVC_" + std::to_string(segment_duration/1000)+ "s.bin";
+        }
+
+        switch(m_bitrate){
+          case 1800:
+            m_file_path = first_part_path + "/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                                  +std::to_string(m_bitrate)+"/RaceNight_720x480_segment"
+                                  +std::to_string((m_seg_id-1)%num_seg_in_video+1)+"_bpp1_" + m_end_of_name_file;//"30fps_HEVC.bin";
+            break;
+          case 5400:
+            m_file_path = first_part_path + "/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                                  +std::to_string(m_bitrate)+"/RaceNight_1280x720_segment"
+                                  +std::to_string((m_seg_id-1)%num_seg_in_video+1)+"_bpp2_" + m_end_of_name_file;
+            break;
+          case 9000:
+            m_file_path = first_part_path + "/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                                  +std::to_string(m_bitrate)+"/RaceNight_1920x1080_segment"
+                                  +std::to_string((m_seg_id-1)%num_seg_in_video+1)+"_bpp3_" + m_end_of_name_file;
+            break;
+          case 18000:
+            m_file_path = first_part_path + "/SD_"+std::to_string(segment_duration)+"ms/bitrate_"
+                                  +std::to_string(m_bitrate)+"/RaceNight_3840x2160_segment"
+                                  +std::to_string((m_seg_id-1)%num_seg_in_video+1)+"_bpp4_" + m_end_of_name_file;
+            break;
+          default:
+            std::cerr << "[ERROR] This quality is not available: " << m_bitrate << std::endl;
+            break;
+        } 
+      }
+      else if (num_representation == 12){
+        first_part_path = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC_12versions";
+        m_end_of_name_file = "30fps_HEVC_" + std::to_string(segment_duration/1000)+ "s.bin";
+
+        m_file_path =  getFileFromBitrate(m_bitrate, m_seg_id, first_part_path, m_end_of_name_file);
+
+      }
+      else{
+        std::cerr << "[ERROR] This # of representations is not available: " << num_representation << std::endl;
+      }
+      break;
+    case BBB:
+      m_file_path = "/home/minh/HTTP2_src/server/real_cbr/BBB_HEVC/SD_" + 
+                    std::to_string(segment_duration) + "ms/" +
+                    std::to_string(m_bitrate) + "/bbb_" + 
+                    std::to_string(segment_duration/1000) + "sec00" + 
+                    std::to_string((m_seg_id-1)%num_seg_in_video + 60000/segment_duration) + ".mp4";
+      break;
+    default: 
+      std::cerr << "This video is not in the server" << std::endl;
+      exit(EXIT_FAILURE);  
+  }
+  // std::cout << "[FILE PATH] " << m_file_path << std::endl;
   return m_file_path;
+  
 }
 
 void push_remaining_files(const response *res, bool retrans_check) {
+  std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
   // if (*server_seg + 1 >= MAX_SEGMENTS) {
   //   std::cout << "********************* DONE ******************" << std::endl;
   //   res->write_head(200);
@@ -171,21 +242,21 @@ void push_remaining_files(const response *res, bool retrans_check) {
 
     push->write_head(200);
     std::string m_file_path = getFilePath(retrans_bitrate, pushing_seg);
-    // std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+    std::cout << "\t[INFO] segment dir: " << m_file_path << std::endl;
 
     push->end(file_generator(m_file_path));
   }
   else{
 
-    if (next_num == 0) { return; }
+    if (next_num == 0) { std::cout << "next_num = 0\n"; return; }
 
     // if (*server_seg > 300){*server_seg = 0;}
     print_new_seg(++req_seg_id, next_bitrate, false);
     next_num--;
-
+    std::cout << "next_num: " << next_num << std::endl;
     boost::system::error_code ec;
     auto push = res->push(ec, "GET", "/seg_"+std::to_string(req_seg_id)+"_rate_"+std::to_string(next_bitrate));
-
+    
     push->on_close([res](uint32_t error_code) {
       // std::cout << "======================== pushing next segment. error_code: " << error_code << std::endl;
       // if (!error_code) {                    // if CANCEL is not sent
@@ -212,9 +283,10 @@ void push_remaining_files(const response *res, bool retrans_check) {
     push->write_head(200);
 
     std::string m_file_path = getFilePath(next_bitrate, req_seg_id);
-    // std::cout << "[INFO] segment dir: " << m_file_path << std::endl;
+    std::cout << "\t[INFO] segment dir: " << m_file_path << std::endl;
 
-    push->end(file_generator(m_file_path));          
+    push->end(file_generator(m_file_path)); 
+    std::cout << "\t[INFO] generated file\n";         
   }
 
 
@@ -225,9 +297,10 @@ void push_file(
     std::shared_ptr<boost::asio::basic_deadline_timer<ptime>> timer, 
     const response *res, std::shared_ptr<bool> closed, boost::system::error_code &ec, bool retrans_check) {
   if (ec || *closed) {
+    std::cout << "[ERROR] Minh\n";
     return;
   }
-
+  std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
   // the time instant of the next segment, note that it is available only if num > 0
   // // Hung_comment: Cai nay chi la dia chi thoi nhe!
   // if (num > 0) {
@@ -256,6 +329,23 @@ int main(int argc, char *argv[]) {
 //  tls.use_certificate_chain_file("server.crt");
 //  configure_tls_context_easy(ec, tls);
 
+
+
+  switch(video){
+    case RACENIGHT:
+      VIDEO_LENGTH = 12000; //ms
+      std::cout << "\nIf RACENIGHT video, How many representations? (4, 12)\n";
+      std::cin >> num_representation;      
+      break;
+    case BBB:
+      VIDEO_LENGTH = 60000; //ms
+      break;
+    default:
+      std::cerr << "No available video" << std::endl;
+      exit(EXIT_FAILURE);
+      break;
+  }
+
   http2 server;
   server.num_threads(100);
 
@@ -276,7 +366,8 @@ int main(int argc, char *argv[]) {
     /* request example: ip:port/req_vod/sd=1000/bitrate=1000/num=4/start_seg=10 
     ** ==> download segments with Segment duration = 1000ms, bitate: 1000 kbps, # segments: 4 (i.e., segments 10, 11, 12, 13)
     */
-    
+    std::cout << "\nREQ_BUFF req.uri().path " << req.uri().path << std::endl;   
+
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
     if (strs.size() != 6) {
@@ -301,6 +392,8 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+    num_seg_in_video = (VIDEO_LENGTH % segment_duration == 0) ? (VIDEO_LENGTH / segment_duration) : ( (int) VIDEO_LENGTH / segment_duration +1);
+    std::cout << "\tREQ_BUFF Num_seg_in_video: " << num_seg_in_video << std::endl;
 
     // compute the available time instant of the next segment
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
@@ -327,7 +420,7 @@ int main(int argc, char *argv[]) {
   server.handle("/req_vod/", [](const request &req, const response &res) {
     // get url, e.g. http://127.0.0.1:3002/req_vod/bitrate=2000/num=4 -> bitrate = 2000kbps, number of segments = 4.
     // currently, the special symbol & is not allowed in the url
-    // std::cout << "\nREQ_VOD req.uri().path " << req.uri().path  << " server_seg: " << *server_seg << std::endl;    
+    std::cout << "\nREQ_VOD req.uri().path " << req.uri().path << std::endl;    
     std::vector<std::string> strs;
     boost::split(strs, req.uri().path, boost::is_any_of("/"));
     if (strs.size() != 6) {
@@ -355,6 +448,8 @@ int main(int argc, char *argv[]) {
         std::cout << "\tVOD start_seg = " << req_seg_id << std:: endl;
       }
     }
+    num_seg_in_video = (VIDEO_LENGTH % segment_duration == 0) ? (VIDEO_LENGTH / segment_duration) : ( (int) VIDEO_LENGTH / segment_duration +1);
+    std::cout << "\tNum_seg_in_video: " << num_seg_in_video << std::endl;
 
     // compute the available time instant of the next segment
     auto avail_time = start_time + milliseconds(*server_seg * segment_duration);
@@ -369,6 +464,7 @@ int main(int argc, char *argv[]) {
     auto closed = std::make_shared<bool>();
 
     res.on_close([timer, closed](uint32_t error_code) {
+      std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
       timer->cancel();
       *closed = true;
     });
@@ -438,10 +534,14 @@ int main(int argc, char *argv[]) {
     res.end();
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
-  std::string port="3002";
-  std::cout << "Listening at the address: 172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  std::string port= "3002";
+  std::string ip = "192.168.164.1";
+  std::cout << "Listening at the address: " << ip << " at port " << port 
+            << "\n Video: " << VIDEO_STRING[video] 
+            << " with segment duration: " << segment_duration << "ms"<< std::endl;
   std::cout << "Retransmission supported for H2BR" << std::endl;
-  if (server.listen_and_serve(ec, "172.16.23.1", port)) {
+
+  if (server.listen_and_serve(ec, ip, port)) {
     std::cerr << "error: " << ec.message() << std::endl;
   }
 }
