@@ -31,7 +31,7 @@
 	mkdir ~/HTTP2_src
 	git clone https://github.com/tatsuhiro-t/spdylay.git ~/HTTP2_src/spdylay
 	cd ~/HTTP2_src/spdylay
-	autoreconf -i
+	autoreconf -i --force
 	automake
 	autoconf
 	./configure
@@ -70,7 +70,7 @@ Voi x86_64
 	ll /usr/local/lib/  
 	////////////////////////////////////////////////////
 	libnghttp2.a              libnghttp2.so.5           libnghttp2_asio.la        libnghttp2_asio.so.1.0.0  python3.4/                
-	libnghttp2.la             libnghttp2.so.5.7.2       libnghttp2_asio.so   pkgconfig/                
+	libnghttp2.la             libnghttp2.so.5.7.2       libnghttp2_asio.so   	  pkgconfig/                
 	libnghttp2.so             libnghttp2_asio.a         libnghttp2_asio.so.1      python2.7/
 	////////////////////////////////////////////////////
 
@@ -139,7 +139,21 @@ Voi x86_64
 
 8) Install dummynet at the client
 	Source: http://hiephv.blogspot.com/2012/08/cai-at-dummynet-cho-linux.html
+			https://unix.stackexchange.com/questions/198003/set-default-kernel-in-grub
 	*** maybe only work on some older ubuntu kernel
+
+	8.0) Install compatible kernel (3.2.82-030282-generic)
+	$ sudo dpkg -i *.deb
+	$ grep submenu /boot/grub/grub.cfg
+		return: gnulinux-advanced-38ea4a12-6cfe-4ed9-a8b5-036295e62ffc
+	$ grep gnulinux /boot/grub/grub.cfg
+		return: gnulinux-3.2.82-030282-generic-advanced-52e1b85b-f105-4c93-bd67-1509ddcc70b5
+	Edit /etc/default/grub as follows:
+	$ sudo gedit /etc/default/grub
+		#GRUB_DEFAULT=0
+		GRUB_DEFAULT="gnulinux-advanced-38ea4a12-6cfe-4ed9-a8b5-036295e62ffc>gnulinux-3.2.82-030282-generic-advanced-52e1b85b-f105-4c93-bd67-1509ddcc70b5"
+	$ sudo update-grub
+	$ sudo reboot		
 
 	8.1) cd to the folder of dummynet
 	$ make KERNELPATH=/lib/modules/`uname -r`/build USRDIR=/usr

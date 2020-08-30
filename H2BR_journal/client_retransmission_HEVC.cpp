@@ -523,7 +523,7 @@ static double   start_play_time = 0;
 // static bool     stall_while_downloading = FALSE;
 static long     stall_duration_before_update = 0;
 
-int       hung_sd = 1000; //ms
+int       hung_sd = 2000; //ms
 int       hung_MAX_SEGMENTS = 300000/hung_sd;
 
 RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
@@ -2675,15 +2675,15 @@ void minh_get_rate_set(int m_hung_sd){
       break;
     case 2000 :
       std::cout << " *********************************** Segment duration = 2s *********************************** " << std::endl;
-      hung_rate_set = hung_rate_set_2s;
+      hung_rate_set = HEVC_RaceNight_1s; //hung_rate_set_2s;
       break;
     case 4000 :
       std::cout << " *********************************** Segment duration = 4s *********************************** " << std::endl;
-      hung_rate_set = hung_rate_set_4s;
+      hung_rate_set = HEVC_RaceNight_1s; //hung_rate_set_4s;
       break;
     case 6000 :
       std::cout << " *********************************** Segment duration = 6s *********************************** " << std::endl;
-      hung_rate_set = hung_rate_set_6s;
+      hung_rate_set = HEVC_RaceNight_1s; //hung_rate_set_6s;
       break;                  
   }
 

@@ -1,0 +1,50 @@
+**************** - NONE
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-27_001910
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-27_001449
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-27_001027
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-27_000606
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-27_000144
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-26_235723
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-26_235301
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-26_234840
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-26_234418
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_NONE_STANDARD/2020-07-26_233957
+
+
+**************** - PROPOSAL - STANDARD
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_011748
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_011314
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_010844
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_010417
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_005944
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_004621
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_004145
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_003710
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_003237
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_STANDARD/2020-07-27_002807
+
+
+**************** - PROPOSAL OPTIMIZATION
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_021634
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_020729
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_015350
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_014914
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_014441
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_014009
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_013536
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_013110
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_012645
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_PROPOSAL_OPTIMIZATION/2020-07-27_012212
+
+
+**************** - SQUAD
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_031313
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_030852
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_030430
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_030009
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_025547
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_025126
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_024704
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_024243
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_023821
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_4000ms/ABR_BBA/RETRANS_SQUAD_STANDARD/2020-07-27_023400
