@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
 * Build: g++ -o server_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
-=======
-* Build: g++ -o sever_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
->>>>>>> 01a2bd361e74987ee2039bb6542eed2631504ee3
 * Run: LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./sever_retransmission_HEVC
 */
 #include <iostream>
