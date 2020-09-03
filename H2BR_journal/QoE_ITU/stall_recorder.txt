@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_0/SD_2000ms/ABR_AGG/RETRANS_PROPOSAL_STANDARD/2020-08-06_103944
 0
 0
@@ -118,3 +119,17 @@
 2
 9.776
 
+=======
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_3/SD_2000ms/ABR_SARA/RETRANS_NONE_STANDARD/2020-07-24_201916
+4
+6.005
+
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_3/SD_2000ms/ABR_SARA/RETRANS_NONE_STANDARD/2020-07-24_194410
+0
+0
+
+/home/minh/ownCloud/Documents/1_Proposal/1_Retransmission/3_Journal/Experimental-Results/H2BR_HEVC/NETWORK_4G/PL_5/SD_2000ms/ABR_SARA/RETRANS_NONE_STANDARD/2020-07-25_085412
+0
+0
+
+>>>>>>> 01a2bd361e74987ee2039bb6542eed2631504ee3

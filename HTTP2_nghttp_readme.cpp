@@ -31,7 +31,7 @@
 	mkdir ~/HTTP2_src
 	git clone https://github.com/tatsuhiro-t/spdylay.git ~/HTTP2_src/spdylay
 	cd ~/HTTP2_src/spdylay
-	autoreconf -i
+	autoreconf -i --force
 	automake
 	autoconf
 	./configure

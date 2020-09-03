@@ -529,7 +529,9 @@ static double   start_play_time = 0;
 static long     stall_duration_before_update = 0;
 
 VIDEO     video = RACENIGHT;
+
 const int NUM_SEG_CONSIDERED = 300;
+
 int       hung_sd = 1000; //ms
 int       hung_MAX_SEGMENTS = 300000/hung_sd;
 
@@ -2241,6 +2243,7 @@ int on_frame_recv_callback2(nghttp2_session *session,
                         << "current time: " << m_download_time << std::endl;
 
               std::cout << ":::::::::::::::::: TERMINATION RETRANS :::::::::::::::::: m_retrans_buff "<<m_retrans_buff << std::endl; 
+
               // minh_terminate_segment(client);
               minh_retrans_terminated_seg_recorder.push_back(m_seg_idx);
               retrans_num_termination ++;
@@ -2270,6 +2273,7 @@ int on_frame_recv_callback2(nghttp2_session *session,
                         << "current time: " << m_download_time << std::endl;
 
               std::cout << ":::::::::::::::::: TERMINATION NEXT :::::::::::::::::: m_retrans_buff "<<m_retrans_buff << " m_response_len: " << m_response_len << std::endl; 
+
               // minh_terminate_segment(client);
               minh_retrans_terminated_seg_recorder.push_back(m_seg_idx);
               retrans_num_termination ++;
@@ -2872,6 +2876,7 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
             submit_request(client, dang_headers, client->reqvec.back().get()); 
         num_of_request++;
     }
+
     std::cout << "\t[RETRANS] seg [" << needed_retrans_seg_id 
               << "] at rate [" << retrans_rate << "]. Retrans_num " 
               <<  retrans_num_remaining << std::endl;//<< retrans_rate <<"] for segment: ["<< needed_retrans_seg_id +1 << "]\tfrom OLD bitrate: " << hung_rate_recorder.at(needed_retrans_seg_id) 
@@ -2885,6 +2890,7 @@ void minh_retrans_segment(HttpClient *client, int new_rate, int retrans_rate, in
     
     std::string url = hung_uri+"/req_vod/sd="+std::to_string(hung_sd)+
                           "/bitrate="+new_rate_string+"/num="+std::to_string(m_next_num)+"/start_seg="+std::to_string(minh_cur_seg_id);
+
     // std::cout << "\t NEXT url: " << url << std::endl;                          
     if (client->add_request(url, dang_data_prd, dang_data_length, dang_pri_spec)){      
       submit_request(client, hung_headers, client->reqvec.back().get());
@@ -3349,8 +3355,8 @@ void retransmission_method(HttpClient *client){
       }  
       else{ // if there's at least 1 gap region
         for (auto a = retrans_gap_region_index.begin(); a != retrans_gap_region_index.end(); ++a){
-          // std::cout << "region index: " << *a << std::endl;
 
+          // std::cout << "region index: " << *a << std::endl;
           // determine the segment idx of this gap region
           int num_buff_seg_before_curr = 0;
           for (int i = 0;i < *a; i++){
@@ -3358,6 +3364,7 @@ void retransmission_method(HttpClient *client){
           }
           int first_seg_idx = rate_recorder_length - num_buffer_segment + num_buff_seg_before_curr + 1;
           int last_seg_idx = first_seg_idx + buff_level_array[*a][1] - 1;
+
           #if 0
           std::cout << "first_seg_idx: " << first_seg_idx << '\n'
                     << "last_seg_idx : " << last_seg_idx << std::endl;
@@ -3385,7 +3392,9 @@ void retransmission_method(HttpClient *client){
                   retrans_retransmitted_seg_recorder.size() > 0 &&             
                   j <= retrans_retransmitted_seg_recorder.at(retrans_retransmitted_seg_recorder.size()-1) &&
                   hung_rate_recorder.at(j-1) != minh_rate_recorder.at(j-1)) { // retransmitted successfully
+
               // std::cout << "*********************** initial check ****************" << std::endl;
+
               continue;
             }
             #endif
@@ -3886,6 +3895,7 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     std::cout << "* Minh * current time: " << hung_sys_time << "ms\n" 
               << "* Minh * current seg id: " << hung_client_seg << '\n'
               // << "* Minh * max seg id: " << minh_max_next_seg_id << '\n'
+
               << std::endl;
 
     // to measure inst_thrp
@@ -3944,7 +3954,9 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
           hung_cur_buff = temp_buff;
         #endif
         // [20.06.30] correct some mistake MOD-E
+
         // std::cout << "############# last retrans hung_cur_buff: " << hung_cur_buff << "ms" << std::endl;
+
       }
       else if (retrans_num_remaining == 0 || termination_trigger) {  // the last segment of this retrasmitting session
         retrans_transmitting = false;
@@ -3965,7 +3977,9 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     }
     else {  // NEXT SEGMENT STREAMS
       next_num_remaining--;
+
       // std::cout << "[INFO] next_num_remaining: " << next_num_remaining << std::endl;
+
       minh_cur_seg_id ++;
       hung_sys_time = std::chrono::duration_cast<std::chrono::milliseconds>(  // to compute buffer after donload each normal segment
                       get_time() - client->timing.connect_end_time).count();
@@ -4078,6 +4092,7 @@ int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
             (retrans_num_remaining <= 0 && retrans_transmitting == false && minh_get_type_from_uri_2(req->make_reqpath()) == "req_vod") || 
             (next_num_remaining <= 0 && retrans_transmitting_period == false && minh_get_type_from_uri_2(req->make_reqpath()) == "retrans"))) {
       // std::cout << "[INFO] New pushing cycle " << std::endl;
+
       if (minh_retransmission_method == PROPOSAL){
         retransmission_method(client);
       }
@@ -4371,25 +4386,28 @@ void print_stats(const HttpClient &client) {
   if (system(dummynet_kill.c_str())) {std::cout << "Could not Kill DummyNet" << std::endl; }
 
   // create a direction
+  int m_max_seg_idx = MIN(hung_MAX_SEGMENTS, hung_rate_recorder.size());
+
+  // only create files if this streaming session is successful
+  
   const string result_direction = "/home/http2client/Documents/http_result/H2BR_HEVC/"  + VIDEO_STRING[video] +
-                                  "/NETWORK_" + TRACE_STRING[minh_trace_mode]                 +
-                                  "/PL_"      + std::to_string(minh_packet_loss)+
-                                  "/SD_"      + std::to_string(hung_sd) + "ms"  + 
-                                  "/BUF_"     + std::to_string(buff_max) + "ms" +
-                                  "/ABR_"     + ABR_STRING[minh_ABR]            + 
-                                  "/RETRANS_" + RETRANS_METHOD_STRING[minh_retransmission_method] + 
-                                  "_"         + H2BR_MODE_STRING[minh_optimize_bitrate]           +
-                                  "/"         + std::string(timeBuff);
-  const string create_directories = "mkdir -p " + result_direction;                           
-  int a_1 = system(create_directories.c_str()); 
+                                "/NETWORK_" + TRACE_STRING[minh_trace_mode]                 +
+                                "/PL_"      + std::to_string(minh_packet_loss)+
+                                "/SD_"      + std::to_string(hung_sd) + "ms"  + 
+                                "/BUF_"     + std::to_string(buff_max) + "ms" +
+                                "/ABR_"     + ABR_STRING[minh_ABR]            + 
+                                "/RETRANS_" + RETRANS_METHOD_STRING[minh_retransmission_method] + 
+                                "_"         + H2BR_MODE_STRING[minh_optimize_bitrate]           +
+                                "/"         + std::string(timeBuff);
+  if (m_max_seg_idx >= hung_MAX_SEGMENTS){                                  
+    const string create_directories = "mkdir -p " + result_direction;                           
+    int a_1 = system(create_directories.c_str()); 
 
-  // string temp1 = "complex_rtt_";
-  // string temp2 = ".sh ";
-  string cp_files = "sudo cp /home/http2client/HTTP2_src/nghttp2-1.16.0/src/nghttp.cc /home/http2client/HTTP2_src/nghttp2-1.16.0/src/"
-                    + dummynet_file + " " + result_direction;     
-  // std::cout << "cp_files: " << cp_files << std::endl; 
+    string cp_files = "sudo cp /home/http2client/HTTP2_src/nghttp2-1.16.0/src/nghttp.cc /home/http2client/HTTP2_src/nghttp2-1.16.0/src/"
+                      + dummynet_file + " " + result_direction;     
 
-  int b = system(cp_files.c_str());
+    int b = system(cp_files.c_str());
+  }
 // [20.06.25] * Create result dir automatically * ADD-E
 
   std::vector<Request *> reqs;
@@ -4464,196 +4482,200 @@ id  responseEnd responseStart requestStart  process code size request path)" << 
   // int    num_success_retrans = 0;
 
   // // Hung: Doan nay tinh thoi gian, sau do in ra (sua roi nhe)
-  ofstream MyExcelFile, log, parameters;
-/* 191103 Minh [Kpush with retransmission] DEL-S*/
+  if (m_max_seg_idx >= hung_MAX_SEGMENTS){
+    ofstream MyExcelFile, log, parameters;
+  
+    MyExcelFile.open(result_direction + "/statistic.ods");
+    MyExcelFile << "Time\tThrp\tRe_Bitrate\tBitrate\tBuffer\tRetrans\tDownloadTime\tRe_id\tOl_id\tDataDownloaded" << endl;  
+    std::cout << std::endl << "The statistics: " << std::endl;
+    std::cout << "Index \tTime \tThrp \tRate \tM_Rate \tBuffer \tRetrans \tRe_id \tol_id" << std::endl;
 
-  int m_max_seg_idx = MIN(hung_MAX_SEGMENTS, hung_rate_recorder.size());
-  MyExcelFile.open(result_direction + "/statistic.ods");
-  MyExcelFile << "Time\tThrp\tRe_Bitrate\tBitrate\tBuffer\tRetrans\tDownloadTime\tRe_id\tOl_id\tDataDownloaded" << endl;  
-  std::cout << std::endl << "The statistics: " << std::endl;
-  std::cout << "Index \tTime \tThrp \tRate \tM_Rate \tBuffer \tRetrans \tRe_id \tol_id" << std::endl;
+    for (int i = 0; i < m_max_seg_idx; i++) {
+      int temp_bitrate_diff = hung_rate_recorder.at(i) - minh_rate_recorder.at(i);
 
-  for (int i = 0; i < m_max_seg_idx; i++) {
-    int temp_bitrate_diff = hung_rate_recorder.at(i) - minh_rate_recorder.at(i);
+      std::cout << hung_seg_recorder.at(i)          << "\t"
+                << hung_time_recorder.at(i)/1000.0  << "\t"
+                << hung_thrp_recorder.at(i)         << "\t"
+                << hung_rate_recorder.at(i)         << "\t"
+                << minh_rate_recorder.at(i)         << "\t"
+                << hung_buff_recorder.at(i)/1000.0  << "\t" 
+                << temp_bitrate_diff                << "\t"
+                << minh_rate_ret_id_recorder.at(i)  << "\t"
+                << minh_rate_old_id_recorder.at(i)  <<std::endl;
 
-    std::cout << hung_seg_recorder.at(i)          << "\t"
-              << hung_time_recorder.at(i)/1000.0  << "\t"
-              << hung_thrp_recorder.at(i)         << "\t"
-              << hung_rate_recorder.at(i)         << "\t"
-              << minh_rate_recorder.at(i)         << "\t"
-              << hung_buff_recorder.at(i)/1000.0  << "\t" 
-              << temp_bitrate_diff                << "\t"
-              << minh_rate_ret_id_recorder.at(i)  << "\t"
-              << minh_rate_old_id_recorder.at(i)  <<std::endl;
-
-    
-    MyExcelFile << hung_time_recorder.at(i)/1000.0  << '\t'  
-                << hung_thrp_recorder.at(i)         << '\t'
-                << hung_rate_recorder.at(i)         << '\t'
-                << minh_rate_recorder.at(i)         << '\t'
-                << hung_buff_recorder.at(i)/1000.0  << '\t'
-                << temp_bitrate_diff                << '\t'
-                << time_download_recorder.at(i)/1000<< '\t'
-                << minh_rate_ret_id_recorder.at(i)  << '\t'
-                << minh_rate_old_id_recorder.at(i)  << '\t'
-                << minh_data_downloaded_recorder.at(i) << endl;
-  }
+      
+      MyExcelFile << hung_time_recorder.at(i)/1000.0  << '\t'  
+                  << hung_thrp_recorder.at(i)         << '\t'
+                  << hung_rate_recorder.at(i)         << '\t'
+                  << minh_rate_recorder.at(i)         << '\t'
+                  << hung_buff_recorder.at(i)/1000.0  << '\t'
+                  << temp_bitrate_diff                << '\t'
+                  << time_download_recorder.at(i)/1000<< '\t'
+                  << minh_rate_ret_id_recorder.at(i)  << '\t'
+                  << minh_rate_old_id_recorder.at(i)  << '\t'
+                  << minh_data_downloaded_recorder.at(i) << endl;
+    }
 
 
-  MyExcelFile.close();
+    MyExcelFile.close();
 
-  log.open(result_direction + "/retrans_buffer_recorder.txt"); 
-  log << "Seg_id\tAvai_time" << endl;
-  for (int n = 0; n < retrans_buffer_recorder.size(); n++){
-    log << retrans_retransmitted_seg_recorder.at(n) +1 << '\t'
-        << retrans_buffer_recorder.at(n) << endl;
-  }
-  log << endl << "--------------------- Pri_new / Pri_retrans ----------------------------" << endl;
-  for (auto a = minh_pri_proportion_recorder.begin(); a != minh_pri_proportion_recorder.end(); ++a){
-    log << *a << endl;
-  }
-  log << endl << "--------------------- Terminated segments ----------------------------" << endl;
-  if (minh_retrans_terminated_seg_recorder.size() > 0){
-    for (auto a = minh_retrans_terminated_seg_recorder.begin(); a != minh_retrans_terminated_seg_recorder.end(); a++){
+    log.open(result_direction + "/retrans_buffer_recorder.txt"); 
+    log << "Seg_id\tAvai_time" << endl;
+    for (int n = 0; n < retrans_buffer_recorder.size(); n++){
+      log << retrans_retransmitted_seg_recorder.at(n) +1 << '\t'
+          << retrans_buffer_recorder.at(n) << endl;
+    }
+    log << endl << "--------------------- Pri_new / Pri_retrans ----------------------------" << endl;
+    for (auto a = minh_pri_proportion_recorder.begin(); a != minh_pri_proportion_recorder.end(); ++a){
       log << *a << endl;
     }
-  }
-  log.close();
+    log << endl << "--------------------- Terminated segments ----------------------------" << endl;
+    if (minh_retrans_terminated_seg_recorder.size() > 0){
+      for (auto a = minh_retrans_terminated_seg_recorder.begin(); a != minh_retrans_terminated_seg_recorder.end(); a++){
+        log << *a << endl;
+      }
+    }
+    log.close();
 
-  for (int i = 0; i < m_max_seg_idx; i ++){
-    // avg_bitrate
-    avg_ret_bitrate += hung_rate_recorder.at(i);
-    avg_new_bitrate += minh_rate_recorder.at(i);
+    for (int i = 0; i < m_max_seg_idx; i ++){
+      // avg_bitrate
+      avg_ret_bitrate += hung_rate_recorder.at(i);
+      avg_new_bitrate += minh_rate_recorder.at(i);
 
-    // avg_idx
-    avg_ret_idx += minh_rate_ret_id_recorder.at(i);
-    avg_old_idx += minh_rate_old_id_recorder.at(i);
+      // avg_idx
+      avg_ret_idx += minh_rate_ret_id_recorder.at(i);
+      avg_old_idx += minh_rate_old_id_recorder.at(i);
 
-    // lowest buff
-    if (hung_buff_recorder.at(i) < lowest_buff && i >= hung_tar_buff/hung_sd)
-      lowest_buff = hung_buff_recorder.at(i);
+      // lowest buff
+      if (hung_buff_recorder.at(i) < lowest_buff && i >= hung_tar_buff/hung_sd)
+        lowest_buff = hung_buff_recorder.at(i);
 
-    // num_switch after retrans
-    if (i != hung_rate_recorder.size()-1 && hung_rate_recorder.at(i) > hung_rate_recorder.at(i+1))
-      num_switch ++;
+      // num_switch after retrans
+      if (i != hung_rate_recorder.size()-1 && hung_rate_recorder.at(i) > hung_rate_recorder.at(i+1))
+        num_switch ++;
 
-    // num_switch_no_retrans
-    if (i != minh_rate_recorder.size()-1 && minh_rate_recorder.at(i) > minh_rate_recorder.at(i+1))
-      num_switch_no_retrans ++;      
-  }
+      // num_switch_no_retrans
+      if (i != minh_rate_recorder.size()-1 && minh_rate_recorder.at(i) > minh_rate_recorder.at(i+1))
+        num_switch_no_retrans ++;      
+    }
 
-  avg_ret_bitrate = avg_ret_bitrate*1.0/m_max_seg_idx;
-  avg_new_bitrate = avg_new_bitrate*1.0/m_max_seg_idx;
+    avg_ret_bitrate = avg_ret_bitrate*1.0/m_max_seg_idx;
+    avg_new_bitrate = avg_new_bitrate*1.0/m_max_seg_idx;
 
-  avg_ret_idx     = avg_ret_idx*1.0/m_max_seg_idx;
-  avg_old_idx     = avg_old_idx*1.0/m_max_seg_idx;
+    avg_ret_idx     = avg_ret_idx*1.0/m_max_seg_idx;
+    avg_old_idx     = avg_old_idx*1.0/m_max_seg_idx;
 
-  parameters.open(result_direction + "/parameters.txt");
-  parameters << "- hung_rate_set = {";
-  for (int a = 0; a < hung_rate_set.size(); a ++){
-    parameters << hung_rate_set.at(a) << ", ";
-  }
+    parameters.open(result_direction + "/parameters.txt");
+    parameters << "- hung_rate_set = {";
+    for (int a = 0; a < hung_rate_set.size(); a ++){
+      parameters << hung_rate_set.at(a) << ", ";
+    }
 
-  double QoE_itu_score = 0;//get_ITU_QOE(result_direction);
-  double QoE_yin_score = get_Yin_QoE_score(hung_rate_recorder, minh_rebuff_duration/1000, start_play_time/1000);
+    double QoE_itu_score = 0;//get_ITU_QOE(result_direction);
+    double QoE_yin_score = get_Yin_QoE_score(hung_rate_recorder, minh_rebuff_duration/1000, start_play_time/1000);
 
-  parameters  << "};" << '\n'
-              << "[CONFIG] Segment duration: " << hung_sd << "\n"
-              << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
-              << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
-              << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
-              << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
-              << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
-              << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
-              << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
+    parameters  << "};" << '\n'
+                << "[CONFIG] Segment duration: " << hung_sd << "\n"
+                << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
+                << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
+                << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
+                << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
+                << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
+                << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
+                << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
 
-              << "- buff_max = " << buff_max << '\n'
-              << "- hung_tar_buff = " << hung_tar_buff << '\n'
-              << "- retrans_buff_thres = " << retrans_buff_thres << '\n'
-              << "- retrans_buff_trigger_on = "<< retrans_buff_trigger_on << '\n'
-              << "- retrans_buff_cancel "    << retrans_buff_cancel << '\n'
-              << "- duc_buff_low = " << duc_buff_low << '\n'
-              << "- alpha = " << alpha << '\n'
-              << "- condition_thres = " << condition_thres << '\n'
-              << "- division_retrans_seg_margin = " << division_retrans_seg_margin << '\n'
-              << "- division_retrans_buff_margin = " << division_retrans_buff_margin << '\n'
-              << "-------------------------------------------------------------------\n"
-              << "- SARA_I = " << I << '\n'
-              << "- SARA_B_a = " << B_a << '\n'
-              << "- SARA_B_b = " << B_b << '\n' 
-              << "- SARA_B_m = " << B_m << "\n\n"
-              << "- SQUAD squad_buff_high = " << squad_buff_high << '\n'
-              << "- SQUAD squad_buff_low = " << squad_buff_low << '\n'
-              << "-------------------------------------------------------------------\n"
-              << "# requests: "      << num_of_request << '\n'
-              << "Avg RET-bitrate: " << avg_ret_bitrate<< '\n'
-              << "Avg RET-idx: "     << avg_ret_idx    << '\n'
-              << "Avg NEW-bitrate: " << avg_new_bitrate<< '\n'
-              << "Avg old-idx: "     << avg_old_idx    << '\n'
-              << "Lowest buff: "     << lowest_buff    << '\n'
-              << "# switches: "      << num_switch     << '\n'
-              << "# switches_noRET: "<< num_switch_no_retrans << '\n'
-              << "# termination: "   << retrans_num_termination << '\n'
-              << "# successfully downloaded segments: " << retrans_buffer_recorder.size() << '\n'
-              << "Amount waste data (KByte): " << (double) amount_waste_data/1000 << '\n' // should include terminated segment.
-              << "# rebuff: "        << rebuf_num << '\n'
-              << "rebuff duration (ms): " << minh_rebuff_duration << '\n'
-              << "startup phase (ms): " << start_play_time << '\n'
-              << "Yin QoE score: " << QoE_yin_score << '\n'
-              << "ITU QoE score: " << QoE_itu_score << '\n'
+                << "- buff_max = " << buff_max << '\n'
+                << "- hung_tar_buff = " << hung_tar_buff << '\n'
+                << "- retrans_buff_thres = " << retrans_buff_thres << '\n'
+                << "- retrans_buff_trigger_on = "<< retrans_buff_trigger_on << '\n'
+                << "- retrans_buff_cancel "    << retrans_buff_cancel << '\n'
+                << "- duc_buff_low = " << duc_buff_low << '\n'
+                << "- alpha = " << alpha << '\n'
+                << "- condition_thres = " << condition_thres << '\n'
+                << "- division_retrans_seg_margin = " << division_retrans_seg_margin << '\n'
+                << "- division_retrans_buff_margin = " << division_retrans_buff_margin << '\n'
+                << "-------------------------------------------------------------------\n"
+                << "- SARA_I = " << I << '\n'
+                << "- SARA_B_a = " << B_a << '\n'
+                << "- SARA_B_b = " << B_b << '\n' 
+                << "- SARA_B_m = " << B_m << "\n\n"
+                << "- SQUAD squad_buff_high = " << squad_buff_high << '\n'
+                << "- SQUAD squad_buff_low = " << squad_buff_low << '\n'
+                << "-------------------------------------------------------------------\n"
+                << "# requests: "      << num_of_request << '\n'
+                << "Avg RET-bitrate: " << avg_ret_bitrate<< '\n'
+                << "Avg RET-idx: "     << avg_ret_idx    << '\n'
+                << "Avg NEW-bitrate: " << avg_new_bitrate<< '\n'
+                << "Avg old-idx: "     << avg_old_idx    << '\n'
+                << "Lowest buff: "     << lowest_buff    << '\n'
+                << "# switches: "      << num_switch     << '\n'
+                << "# switches_noRET: "<< num_switch_no_retrans << '\n'
+                << "# termination: "   << retrans_num_termination << '\n'
+                << "# successfully downloaded segments: " << retrans_buffer_recorder.size() << '\n'
+                << "Amount waste data (KByte): " << (double) amount_waste_data/1000 << '\n' // should include terminated segment.
+                << "# rebuff: "        << rebuf_num << '\n'
+                << "rebuff duration (ms): " << minh_rebuff_duration << '\n'
+                << "startup phase (ms): " << start_play_time << '\n'
+                << "Yin QoE score: " << QoE_yin_score << '\n'
+                << "ITU QoE score: " << QoE_itu_score << '\n'
 
-              << "-------------------------------------------------------------------"
-              << " Num of seg for each NEW-seg request\n"
-              << endl;
-  for (int a = 0; a < minh_next_num_recorder.size(); a++){
-    parameters << minh_next_num_recorder.at(a) << endl;
-  }  
+                << "-------------------------------------------------------------------"
+                << " Num of seg for each NEW-seg request\n"
+                << endl;
+    for (int a = 0; a < minh_next_num_recorder.size(); a++){
+      parameters << minh_next_num_recorder.at(a) << endl;
+    }  
 
-  parameters << "-----------------------"
-             << " Num of seg for each RETRANS-seg request"
-             << endl;
-  for (int a = 0; a < minh_retrans_num_recorder.size(); a++){
-    parameters << minh_retrans_num_recorder.at(a) << endl;
-  } 
-
-  parameters << "-----------------------"
-             << " Retrans buffer recorder"
-             << endl;
-  for (int a = 0; a < retrans_buffer_recorder.size(); a++){
-    parameters << retrans_buffer_recorder.at(a) << endl;
-  }        
-
-  parameters << "-----------------------"
-             << " Stall timestamp"
-             << endl;
-  if (minh_stall_start_time.size() > 0)             
-    for (int a = 0; a < minh_stall_start_time.size(); a++){
-      parameters << minh_stall_start_time.at(a) << endl;
+    parameters << "-----------------------"
+               << " Num of seg for each RETRANS-seg request"
+               << endl;
+    for (int a = 0; a < minh_retrans_num_recorder.size(); a++){
+      parameters << minh_retrans_num_recorder.at(a) << endl;
     } 
 
-  parameters << "-----------------------"
-             << " Stall duration"
-             << endl;
-  if (minh_rebuff_duration_recorder.size() > 1)             
-    for (int a = 1; a < minh_rebuff_duration_recorder.size(); a++){
-      parameters << minh_rebuff_duration_recorder.at(a) << endl;
-    }  
-  
-  parameters.close();
- 
-  std::cout   << "[CONFIG] Segment duration: " << hung_sd << "\n"
-              << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
-              << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
-              << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
-              << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
-              << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
-              << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
-              << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
-              << "[QoE] ITU score = " << QoE_itu_score << "\n"
-              << "[QoE] Yin score = " << QoE_yin_score << std::endl;
+    parameters << "-----------------------"
+               << " Retrans buffer recorder"
+               << endl;
+    for (int a = 0; a < retrans_buffer_recorder.size(); a++){
+      parameters << retrans_buffer_recorder.at(a) << endl;
+    }        
+
+    parameters << "-----------------------"
+               << " Stall timestamp"
+               << endl;
+    if (minh_stall_start_time.size() > 0)             
+      for (int a = 0; a < minh_stall_start_time.size(); a++){
+        parameters << minh_stall_start_time.at(a) << endl;
+      } 
+
+    parameters << "-----------------------"
+               << " Stall duration"
+               << endl;
+    if (minh_rebuff_duration_recorder.size() > 1)             
+      for (int a = 1; a < minh_rebuff_duration_recorder.size(); a++){
+        parameters << minh_rebuff_duration_recorder.at(a) << endl;
+      }  
+    
+    parameters.close();
+   
+    std::cout   << "[CONFIG] Segment duration: " << hung_sd << "\n"
+                << "[CONFIG] Num of segments: " << m_max_seg_idx << "\n" 
+                << "[CONFIG] Retrans_extension {False, True}: " << minh_retrans_extension  << "\n"
+                << "[CONFIG] minh_optimize_bitrate {False, True}: " << minh_optimize_bitrate << "\n"
+                << "[CONFIG] Retransmission_method {PROPOSAL, SQUAD}: " << RETRANS_METHOD_STRING[minh_retransmission_method]  << "\n"
+                << "[CONFIG] ABR {AGG, SARA, BBA}: " << ABR_STRING[minh_ABR]  << "\n"
+                << "[CONFIG] Network Type {TRACE_3G, TRACE_4G, TRACE_5G}: " << TRACE_STRING[minh_trace_mode]  << "\n"
+                << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%\n\n"
+                << "[QoE] ITU score = " << QoE_itu_score << "\n"
+                << "[QoE] Yin score = " << QoE_yin_score << std::endl;
 
 
-  std::cout << "New result folder was created: " << result_direction  << std::endl;
+    std::cout << "New result folder was created: " << result_direction  << std::endl;
+  }  
+  else {
+    std::cout << ":((( This streaming session is not successful. Num of downloaded segments is " 
+              << m_max_seg_idx << "(<" << hung_MAX_SEGMENTS << ")\n";
+  }
 
   std::cout << "============================= THE END =====================" << '\n';              
           

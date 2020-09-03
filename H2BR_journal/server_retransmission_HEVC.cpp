@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
 * Build: g++ -o server_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+=======
+* Build: g++ -o sever_retransmission_HEVC server_retransmission_HEVC.cpp -lnghttp2_asio -lboost_system -std=c++11 -lssl -lcrypto -lpthread
+>>>>>>> 01a2bd361e74987ee2039bb6542eed2631504ee3
 * Run: LD_LIBRARY_PATH=~/HTTP2_src/nghttp2/src/.libs/:~/HTTP2_src/nghttp2/lib/.libs/ ./sever_retransmission_HEVC
 */
 #include <iostream>
@@ -27,6 +31,7 @@ int   sum_seg_already_sent = 0;
 
 // auto avail_seg = std::make_shared<int>();
 // auto server_seg = std::make_shared<int>();
+
 const int MAX_SEGMENTS = 596000/segment_duration + 1;
 
 
@@ -80,7 +85,9 @@ std::string getFileFromBitrate(int m_bitrate, int m_seg_id, std::string m_first_
     if (HEVC_RaceNight_12_versions.at(version_id) == m_bitrate)
       break;
   }
+
   // std::cout << "bitrate: " << m_bitrate << " Version idx: " << version_id << std::endl;
+
   // /home/minh/HTTP2_src/server/real_cbr/RaceNight_HEVC_12versions/SD_2000ms/RaceNight_640x360_segment1_bpp12_30fps_HEVC_2s.bin
   std::string output = m_first_part_path + "/SD_" 
                        + std::to_string(segment_duration)+"ms/RaceNight_"
@@ -144,6 +151,7 @@ std::string getFilePath(int m_bitrate, int m_seg_id){
       else{
         std::cerr << "[ERROR] This # of representations is not available: " << num_representation << std::endl;
       }
+
       break;
     case BBB:
       m_file_path = "/home/minh/HTTP2_src/server/real_cbr/BBB_HEVC/SD_" + 
@@ -152,6 +160,7 @@ std::string getFilePath(int m_bitrate, int m_seg_id){
                     std::to_string(segment_duration/1000) + "sec00" + 
                     std::to_string((m_seg_id-1)%num_seg_in_video + 60000/segment_duration) + ".mp4";
       break;
+
     default: 
       std::cerr << "This video is not in the server" << std::endl;
       exit(EXIT_FAILURE);  
@@ -162,6 +171,7 @@ std::string getFilePath(int m_bitrate, int m_seg_id){
 }
 
 void push_remaining_files(const response *res, bool retrans_check) {
+  std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
   // if (*server_seg + 1 >= MAX_SEGMENTS) {
   //   std::cout << "********************* DONE ******************" << std::endl;
   //   res->write_head(200);
@@ -250,12 +260,13 @@ void push_remaining_files(const response *res, bool retrans_check) {
   }
   else{
 
-    if (next_num == 0) { return; }
+    if (next_num == 0) { std::cout << "next_num = 0\n"; return; }
 
     // if (*server_seg > 300){*server_seg = 0;}
     print_new_seg(++req_seg_id, next_bitrate, false);
     sum_seg_already_sent++;
     next_num--;
+
     boost::system::error_code ec;
     auto push = res->push(ec, "GET", "/seg_"+std::to_string(req_seg_id)+"_rate_"+std::to_string(next_bitrate));
     
@@ -288,6 +299,7 @@ void push_remaining_files(const response *res, bool retrans_check) {
     std::string m_file_path = getFilePath(next_bitrate, req_seg_id);
 
     push->end(file_generator(m_file_path)); 
+
   }
 
 
@@ -298,6 +310,7 @@ void push_file(
     std::shared_ptr<boost::asio::basic_deadline_timer<ptime>> timer, 
     const response *res, std::shared_ptr<bool> closed, boost::system::error_code &ec, bool retrans_check) {
   if (ec || *closed) {
+    std::cout << "[ERROR] Minh\n";
     return;
   }
   // the time instant of the next segment, note that it is available only if num > 0
@@ -393,6 +406,7 @@ int main(int argc, char *argv[]) {
       }
     }
     num_seg_in_video = (VIDEO_LENGTH % segment_duration == 0) ? (VIDEO_LENGTH / segment_duration) : ( (int) VIDEO_LENGTH / segment_duration +1);
+
     // std::cout << "\tREQ_BUFF Num_seg_in_video: " << num_seg_in_video << std::endl;
 
     // compute the available time instant of the next segment
@@ -450,6 +464,7 @@ int main(int argc, char *argv[]) {
       }
     }
     num_seg_in_video = (VIDEO_LENGTH % segment_duration == 0) ? (VIDEO_LENGTH / segment_duration) : ( (int) VIDEO_LENGTH / segment_duration +1);
+
     // std::cout << "\tNum_seg_in_video: " << num_seg_in_video << std::endl;
 
     // compute the available time instant of the next segment
@@ -465,6 +480,7 @@ int main(int argc, char *argv[]) {
     auto closed = std::make_shared<bool>();
 
     res.on_close([timer, closed](uint32_t error_code) {
+      std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
       timer->cancel();
       *closed = true;
     });
