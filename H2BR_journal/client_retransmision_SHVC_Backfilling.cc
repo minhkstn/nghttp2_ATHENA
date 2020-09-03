@@ -554,7 +554,7 @@ struct Seg_layers   // a stream = 1 layer
 
 struct Segments
 {
-    int                 num_layers;
+    int                 num_layers = 0;
     struct Seg_layers   layer[MAX_LAYER_ID];
 };
 
@@ -598,9 +598,9 @@ static long     first_play_time = 0;
 // MINH SVC_Backfilling_ABR Parameters -E
 
 ///////////////////////////////////////////////////////
-int       hung_sd = 1000; //ms
-int       hung_max_seg_id_consideration = 300;
-int       hung_MAX_SEGMENTS = hung_max_seg_id_consideration+50;
+int       hung_sd = 6000; //ms
+int       hung_max_seg_id_consideration = 300*1000/hung_sd;
+int       hung_MAX_SEGMENTS = hung_max_seg_id_consideration;
 
 const RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
 const ABR                     minh_ABR = AGGRESSIVE;
@@ -792,7 +792,7 @@ double                smoothedBW = 0;
 
 bool                  squad_decr_flag = 0;
 enum est_thrp_mode {LAST_THRP, LOWER_BOUND};
-enum TRACE_MODE {TRACE_3G, TRACE_4G};
+enum TRACE_MODE {TRACE_3G, TRACE_4G, TRACE_5G};
 /* 191028 Minh [live streaming for retransmission] ADD-E*/
 
 
@@ -2257,9 +2257,7 @@ int on_frame_recv_callback2(nghttp2_session *session,
         
         long m_download_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                    get_time() - client->timing.connect_end_time).count();
-        m_download_time = m_download_time - hung_sys_time;
-
-        double m_inst_buff = hung_cur_buff - m_download_time; //ms
+        double m_inst_buff = hung_cur_buff - (m_download_time - hung_last_adapt_time); //ms
 
         // if (m_seg_idx == retrans_seg_id){
         //   retrans_stream_id = frame->hd.stream_id;
@@ -4084,11 +4082,13 @@ void print_stats(const HttpClient &client) {
   strftime(timeBuff, 20, "%F_%H%M%S", timeInfo);
 
   // create a direction
-  string result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/Buf_"   + 
-                            std::to_string(buff_max/1000) + 
-                            "/PL_"    + std::to_string(minh_packet_loss)     +
-                            "/SVC_Backfilling/" +
-                            std::string(timeBuff);  
+    string result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/SD_" + 
+                              std::to_string(hung_sd) + "/Buf_"   + 
+                              std::to_string(buff_max/1000) + 
+                              "/PL_"    + std::to_string(minh_packet_loss)     +
+                              "/SVC_Backfilling/" +
+                              std::string(timeBuff); 
+                              
 
   const string create_directories = "mkdir -p " + result_direction;                           
   int a_1 = system(create_directories.c_str()); 
@@ -4227,7 +4227,7 @@ void print_stats(const HttpClient &client) {
   int    num_switch = 0;
   int    num_switch_no_retrans = 0;
 
-  parameters.open(result_direction + "/SVC_summary.txt");
+  parameters.open(result_direction + "/summary.txt");
 
   parameters << "AGG {AGG, CURSOR, BACKFILLING}: " << minh_ABR << " \tRetrans_enable: " << minh_retrans_extention << std::endl;
   parameters << "Buffer size: " << buff_max << "\tBuffer exit threshold: " << minh_rebuff_exit << std::endl;

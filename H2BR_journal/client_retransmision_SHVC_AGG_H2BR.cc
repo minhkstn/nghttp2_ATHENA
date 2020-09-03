@@ -588,13 +588,14 @@ static double   start_play_time = 0;
 std::vector<int>  terminated_seg_id;
 
 ///////////////////////////////////////////////////////
-int       hung_sd = 1000; //ms
-int       hung_max_seg_id_consideration = 300;
+int       hung_sd = 2000; //ms
+int       hung_max_seg_id_consideration = 300*1000/hung_sd;
 int       hung_MAX_SEGMENTS = hung_max_seg_id_consideration;
 
 const RETRANSMISSION_METHOD   minh_retransmission_method = PROPOSAL;
 const ABR                     minh_ABR = AGGRESSIVE;
-const bool                    minh_retrans_extention = true;
+
+bool                          minh_retrans_extension = true;
 int                           buff_max = 0;       //20000 //15000 //10000 //5000       // 191103 this is max buffer size
 int                           MINH_REBUF_THRESHOLD_EXIT  = 0;     //15000 //10000 //6000  // 3000     //B_m; // this is used in algorithm. stop rebuffering for Aggressive ABR
 int                           hung_tar_buff = MINH_REBUF_THRESHOLD_EXIT;
@@ -791,7 +792,7 @@ double                smoothedBW = 0;
 
 bool                  squad_decr_flag = 0;
 enum est_thrp_mode {LAST_THRP, LOWER_BOUND};
-enum TRACE_MODE {TRACE_3G, TRACE_4G};
+enum TRACE_MODE {TRACE_3G, TRACE_4G, TRACE_5G};
 /* 191028 Minh [live streaming for retransmission] ADD-E*/
 
 
@@ -3195,6 +3196,17 @@ void minh_get_thrp_est (){
     thrp_est = minh_cur_thrp;    
 }
 
+double get_svc_thrp(int last_seg_id){
+  double thrp = 0;
+
+  for (int i = 0; i < segment[last_seg_id].num_layers; i++){
+    thrp += segment[last_seg_id].layer[i].throughput;
+    std::cout << "[INFO] ***throughput of segment " << last_seg_id << " layer " << i << ": " << segment[last_seg_id].layer[i].throughput << std::endl;
+  }
+  thrp = thrp*1.0/ segment[last_seg_id].num_layers;
+  std::cout << "[INFO] ***throughput of segment " << last_seg_id << ": " << thrp << std::endl;
+  return thrp;
+}
 
 void retransmission_method_SVC(HttpClient *client){
   std::cout << "\n~~~~~~~~~~~~~~~~~~~~ PROPOSAL ~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
@@ -3255,14 +3267,14 @@ void retransmission_method_SVC(HttpClient *client){
     minh_client_seg ++;
     cur_layer_id = 1;
     int tmp_num_layers = 1;
-    estimated_throughput = hung_inst_thrp;
+    estimated_throughput = get_svc_thrp(minh_client_seg-1); //hung_inst_thrp;
 
     for (int i = MAX_LAYER_ID; i>=1; i--)
     {
-      if ( MINH_SUM_BITRATE_SET[minh_client_seg % 12][i-1] < 0.9 *estimated_throughput)
+      if ( MINH_SUM_BITRATE_SET[minh_client_seg % NUM_SEGMENTS][i-1] < 0.9 *estimated_throughput)
       {
         tmp_num_layers = i;
-        std::cout << "\t\tSeg: " << minh_client_seg <<" \tbitrate: " << MINH_SUM_BITRATE_SET[minh_client_seg % 12][i-1]<<
+        std::cout << "\t\tSeg: " << minh_client_seg <<" \tbitrate: " << MINH_SUM_BITRATE_SET[minh_client_seg % NUM_SEGMENTS][i-1]<<
                       " \test_thrp: "<< 0.9 *estimated_throughput<<" Kbps\n" << std::endl;
         break;
       }
@@ -3278,12 +3290,12 @@ void retransmission_method_SVC(HttpClient *client){
   segment[minh_client_seg].layer[cur_layer_id-1].bitrate = MINH_BITRATE_SET[minh_client_seg % 12][cur_layer_id-1];
 
 
-  // check if minh_retrans_extention = T or F
-  if (minh_retrans_extention && !retrans_transmitting)
+  // check if minh_retrans_extension = T or F
+  if (minh_retrans_extension && !retrans_transmitting)
   {
     std::cout << "~~~~~~~~ RETRANS EXTENION IS ENABLE~~~~~~~" << std::endl;
     // trigger retrans
-    if (estimated_throughput > MINH_SUM_BITRATE_SET[minh_client_seg % 12][segment[minh_client_seg].num_layers-1] &&
+    if (estimated_throughput > MINH_SUM_BITRATE_SET[minh_client_seg % NUM_SEGMENTS][segment[minh_client_seg].num_layers-1] &&
         // minh_retrans_trigger == FALSE &&
         minh_client_seg*hung_sd > MINH_REBUF_THRESHOLD_EXIT &&
         hung_cur_buff >= RETRANS_BUFF_TRIGGER_ON)
@@ -3334,8 +3346,9 @@ void retransmission_method_SVC(HttpClient *client){
                 if(found_a_gap && i < hung_max_seg_id_consideration)
                 {
                     // tinh t^a, T^R, B^e
-                    int next_all_rate = MINH_SUM_BITRATE_SET[minh_client_seg % 12][segment[minh_client_seg].num_layers-1];
-                    int retrans_rate = MINH_BITRATE_SET[m_retrans_seg_id % 12][segment[m_retrans_seg_id].num_layers];
+                    int next_all_rate = MINH_SUM_BITRATE_SET[minh_client_seg % NUM_SEGMENTS][segment[minh_client_seg].num_layers-1];
+
+                    int retrans_rate = MINH_BITRATE_SET[m_retrans_seg_id % NUM_SEGMENTS][segment[m_retrans_seg_id].num_layers];
                     double t_avai = (m_retrans_seg_id -minh_client_seg)*hung_sd + hung_cur_buff;
                     double retrans_throughput = hung_sd*retrans_rate / t_avai;
                     double estimated_buffer = hung_cur_buff + 
@@ -3399,7 +3412,7 @@ void retransmission_method_SVC(HttpClient *client){
     }
 
 
-  } // minh_retrans_extention ON
+  } // minh_retrans_extension ON
   else
   {
     //send next request: cur_layer_id + minh_client_seg 
@@ -3660,6 +3673,7 @@ void retransmission_SQUAD_method(HttpClient *client){
 
 void get_inst_thrp (TRACE_MODE mode, long m_sub_download_time_us, double m_temp_thrp){
   if (mode == TRACE_3G){ // 3G
+    std::cout << "=============== TRACE_3G ==================" << std::endl;
     if (hung_rate_recorder.size() == 0){
       hung_inst_thrp = 1000;
     }
@@ -3670,24 +3684,23 @@ void get_inst_thrp (TRACE_MODE mode, long m_sub_download_time_us, double m_temp_
 
     if(hung_inst_thrp > 4000) 
       hung_inst_thrp = hung_thrp_recorder.at(hung_rate_recorder.size()-1);  // thuc ra k dung lam  
-
-    std::cout << "~~~~~~~~~~~~~~~~ trace 3g [" << hung_inst_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
   }
   else if (mode == TRACE_4G){ // 4G
-    // std::cout << "~~~~~~~~~~~~~~~~ trace 4g m_temp_thrp [" << m_temp_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
-    if (m_temp_thrp < 65000 && m_temp_thrp > 0)
-    {
-      hung_inst_thrp = m_temp_thrp;
-    }
+    std::cout << "~~~~~~~~~~~~~~~~ TRACE_4G ~~~~~~~~~~~~~~~~" << std::endl;
+    if (m_sub_download_time_us > 20000 || hung_rate_recorder.size() == 0)
+      hung_inst_thrp = (m_temp_thrp > 60000) ? 60000 : m_temp_thrp; // limit the measured throughput.
     else 
-    {
-      if (hung_inst_thrp == 0)
-        hung_inst_thrp = 20000;
-      else
-        hung_inst_thrp = hung_inst_thrp; //hung_thrp_recorder.at(hung_rate_recorder.size()-1);
+      hung_inst_thrp = hung_thrp_recorder.at(hung_rate_recorder.size()-1);
+  }
+  else if (mode == TRACE_5G){ // 5G
+    std::cout << "~~~~~~~~~~~~~~~~ TRACE_5G ~~~~~~~~~~~~~~~~" << std::endl;
+    hung_inst_thrp = MIN(m_temp_thrp, 300000);
+    if (m_temp_thrp == 0){
+      hung_inst_thrp = 200000;
     }
-
-    // std::cout << "~~~~~~~~~~~~~~~~ trace 4g hung_inst_thrp [" << hung_inst_thrp << " Kbps] ~~~~~~~~~~~~~~~~" << std::endl;
+  }
+  else {
+    std::cerr << "[ERROR-get_inst_thrp()] Wrong Network type. Available types (3G, 4G, 5G)" << std::endl;
   }
 }
 /* 191114 Minh [retransmission] ADD-E*/
@@ -3894,11 +3907,19 @@ void print_stats(const HttpClient &client) {
   strftime(timeBuff, 20, "%F_%H%M%S", timeInfo);
 
   // create a direction
-  string result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/Buf_"   + 
-                            std::to_string(buff_max/1000) + 
-                            "/PL_"    + std::to_string(minh_packet_loss)     +
-                            "/H2BR/" +
-                            std::string(timeBuff);  
+    string result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/SD_" + 
+                              std::to_string(hung_sd) + "/Buf_"   + 
+                              std::to_string(buff_max/1000) + 
+                              "/PL_"    + std::to_string(minh_packet_loss)     +
+                              "/AGG/" +
+                              std::string(timeBuff); 
+  if (minh_retrans_extension)
+     result_direction = "/home/minh/Documents/http_result/H2BR_SHVC/NETWORK_4G/HTTP2/SD_" + 
+                              std::to_string(hung_sd) + "/Buf_"   + 
+                              std::to_string(buff_max/1000) + 
+                              "/PL_"    + std::to_string(minh_packet_loss)     +
+                              "/H2BR/" +
+                              std::string(timeBuff);                               
 
   const string create_directories = "mkdir -p " + result_direction;                           
   int a_1 = system(create_directories.c_str()); 
@@ -4039,7 +4060,7 @@ void print_stats(const HttpClient &client) {
 
   parameters.open(result_direction + "/summary.txt");
 
-  parameters << "AGG {AGG, CURSOR, BACKFILLING}: %" << minh_ABR << " \tRetrans_enable: " << minh_retrans_extention << std::endl;
+  parameters << "AGG {AGG, CURSOR, BACKFILLING}: %" << minh_ABR << " \tRetrans_enable: " << minh_retrans_extension << std::endl;
   parameters << "Buffer size: " << buff_max << "\tBuffer exit threshold: " << MINH_REBUF_THRESHOLD_EXIT
              << "\t# segs inconsideration: " << hung_max_seg_id_consideration <<  std::endl;
 
@@ -4051,7 +4072,7 @@ void print_stats(const HttpClient &client) {
     parameters << "- sum_avg_switch = " << 0 << std::endl;
   
   parameters << "- sum_stall_num = "  << minh_rebuff_duration_recorder.size() << std::endl;
-  parameters << "- sum_stall_duration = " << minh_rebuff_duration/1000 << " s\n" << endl;
+  parameters << "- sum_stall_duration = " << minh_rebuff_duration << " ms\n" << endl;
   parameters << "- sum_retrans_num = " << retrans_num << std::endl;
   parameters << "- sum_terminate_num = " << retrans_num_termination << endl;
 
@@ -4063,10 +4084,10 @@ void print_stats(const HttpClient &client) {
   }
 
   parameters.close();
- 
+  std::cout << "Results are stored in " << result_direction << std::endl;
   std::cout << "============================= THE END =====================" << '\n';
 
-  if (minh_retrans_extention == true){
+  if (minh_retrans_extension == true){
     std::cout << "Retransmission extention: YES" << std::endl;
     if (minh_retransmission_method == PROPOSAL){
       std::cout << "Retransmission method: PROPOSAL" << std::endl;
@@ -4696,6 +4717,7 @@ int main(int argc, char **argv) {
         {"encoder-header-table-size", required_argument, &flag, 14},
         {"buffer-max", required_argument, nullptr, 'B'},
         {"packet-loss", required_argument, nullptr, 'P'},
+        {"retrans-extension", required_argument, nullptr, 'R'},
         {nullptr, 0, nullptr, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "M:Oab:c:d:gm:np:r:hH:vst:uw:W:",
@@ -4853,6 +4875,16 @@ int main(int argc, char **argv) {
     case 'P':
       minh_packet_loss = std::stoi(optarg);
       std::cout << "[CONFIG] minh_packet_loss = " << minh_packet_loss  << "%" << std::endl;
+      break;
+    case 'R':
+      if (strcmp(optarg, "FALSE") == 0)
+      {
+        minh_retrans_extension = false;
+      }
+      else
+      {
+        minh_retrans_extension = true;
+      }
       break;
 // MINH 20.06.08 [Add more command options] ADD-E    
     case '?':

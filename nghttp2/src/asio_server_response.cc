@@ -45,17 +45,25 @@ void response::write_head(unsigned int status_code, header_map h) const {
   impl_->write_head(status_code, std::move(h));
 }
 
-void response::end(std::string data) const { impl_->end(std::move(data)); }
+void response::end(std::string data) const { 
+	std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
+	impl_->end(std::move(data)); }
 
-void response::end(generator_cb cb) const { impl_->end(std::move(cb)); }
+void response::end(generator_cb cb) const { 
+	std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
+	impl_->end(std::move(cb)); }
 
 void response::write_trailer(header_map h) const {
   impl_->write_trailer(std::move(h));
 }
 
-void response::on_close(close_cb cb) const { impl_->on_close(std::move(cb)); }
+void response::on_close(close_cb cb) const { 
+	std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
+	impl_->on_close(std::move(cb)); }
 
-void response::cancel(uint32_t error_code) const { impl_->cancel(error_code); }
+void response::cancel(uint32_t error_code) const { 
+	std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
+	impl_->cancel(error_code); }
 
 const response *response::push(boost::system::error_code &ec,
                                std::string method, std::string path,

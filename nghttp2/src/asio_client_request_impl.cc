@@ -60,7 +60,10 @@ void request_impl::call_on_push(request &push_req) {
   }
 };
 
-void request_impl::on_close(close_cb cb) { close_cb_ = std::move(cb); }
+void request_impl::on_close(close_cb cb) { 
+  std::cout << "======== Minh === " << __func__ << "(): "<< __LINE__ << std::endl;
+  close_cb_ = std::move(cb); 
+}
 
 void request_impl::call_on_close(uint32_t error_code) {
   if (close_cb_) {

@@ -1,0 +1,144 @@
+{
+    "I11": {
+    	"_comment": " This is for audio",
+        "segments": [],
+        "streamID": 42
+    },
+    "I13": {
+    	"_comment": " This is for video",
+        "segments": [
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 0
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 2
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 4
+			},
+			{
+				"bitrate": 1800,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "720x480",
+				"start": 6
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 8
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 10
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 12
+			},
+			{
+				"bitrate": 9000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1920x1080",
+				"start": 14
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 16
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 18
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 20
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 22
+			},
+			{
+				"bitrate": 18000,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "3840x2160",
+				"start": 24
+			},
+			{
+				"bitrate": 5400,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1280x720",
+				"start": 26
+			},
+			{
+				"bitrate": 5400,
+				"codec": "hevc",
+				"duration": 2,
+				"fps": 30.0,
+				"resolution": "1280x720",
+				"start": 28
+			}
+
+        ],
+        "streamId": 42
+    },
+    "I23": {
+        "stalling": [
+        	[0, 0.0001]],
+        "streamId": 42
+    },
+    "IGen": {
+        "device": "pc",
+        "displaySize": "3840x2160",
+        "viewingDistance": "70cm"
+    }
+}

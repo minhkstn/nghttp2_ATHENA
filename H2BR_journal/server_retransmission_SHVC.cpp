@@ -12,7 +12,9 @@ using namespace boost::posix_time;
 
 int num;
 
-int segment_duration = 1000; // 1000ms
+int segment_duration = 2000; // 1000ms
+int num_seg_in_video = 12000/segment_duration;
+
 auto avail_seg = std::make_shared<int>();
 auto server_seg = std::make_shared<int>();
 const int MAX_SEGMENTS = 500;
@@ -144,14 +146,15 @@ void push_remaining_files(const response *res, bool retrans_check) {
     });
 
     push->write_head(200);
-    std::string file_dir = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_1_binary/RaceNight_3840x2160_segment" +
-                            std::to_string(pushing_seg%12+1)  +
-                            "_bpp1_30fps_SEVC_Layer"          +
+    std::string file_dir = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_journal/" + 
+                            std::to_string(segment_duration/1000) +  "s/RaceNight_3840x2160_segment" +
+                            std::to_string(pushing_seg%num_seg_in_video+1)  + "_bpp1_30fps_SHVC_SD" + 
+                            std::to_string(segment_duration/1000) + "_Layer"          +
                             std::to_string(retrans_bitrate-1) + 
                             ".bin";
     push->end(file_generator(file_dir));  // RaceNight_segment1_Layer1.bin
     std::cout << file_dir << std::endl;
-    // /home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_1/RaceNight_3840x2160_segment1_bpp1_30fps_SEVC_Layer0.bin
+    ///home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_journal/2s/RaceNight_3840x2160_segment4_bpp1_30fps_SHVC_SD2_Layer0.bin
   }
   else{
 
@@ -184,14 +187,22 @@ void push_remaining_files(const response *res, bool retrans_check) {
     push->write_head(200);
     // push->end(file_generator("/home/minh/HTTP2_src/server/git/nghttp2_ATHENA/real_cbr/RaceNight_SVC/RaceNight_segment" + std::to_string ((*server_seg+1)%12+1) + "_QP26_50_Layer" + std::to_string(next_bitrate-1) + ".bin" ));  // RaceNight_segment1_Layer1.bin
     
-    std::string file_dir = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_1/RaceNight_3840x2160_segment" +
-                            std::to_string((*server_seg)%12+1)  +
-                            "_bpp1_30fps_SEVC_Layer"          +
+    // std::string file_dir = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_1/RaceNight_3840x2160_segment" +
+    //                         std::to_string((*server_seg)%12+1)  +
+    //                         "_bpp1_30fps_SEVC_Layer"          +
+    //                         std::to_string(next_bitrate-1) + 
+    //                         ".bin";
+    std::string file_dir = "/home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_journal/" + 
+                            std::to_string((int)segment_duration/1000) +  "s/RaceNight_3840x2160_segment" +
+                            std::to_string((*server_seg)%num_seg_in_video+1)  + "_bpp1_30fps_SHVC_SD" + 
+                            std::to_string((int)segment_duration/1000) + "_Layer"          +
                             std::to_string(next_bitrate-1) + 
-                            ".bin";
+                            ".bin";            
+    std::cout << file_dir << std::endl;                                               
     push->end(file_generator(file_dir));  // RaceNight_segment1_Layer1.bin
-    std::cout << file_dir << std::endl;    
-    // /home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_1/RaceNight_3840x2160_segment1_bpp1_30fps_SEVC_Layer0.bin
+       
+    // /home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_journal/2s/RaceNight_3840x2160_segment4_bpp1_30fps_SHVC_SD2_Layer0.bin
+    // /home/minh/HTTP2_src/server/real_cbr/RaceNight_SHVC_journal/2s/RaceNight_3840x2160_segment1_bpp1_30fps_SHVC_SD2_Layer0.bin
   }
 
 
@@ -376,8 +387,9 @@ int main(int argc, char *argv[]) {
   });
 /* 191103 Minh [Kpush with retransmission] ADD-E*/  
   std::string port="3002";
-  std::cout << "SHVC Server. Listening at the address: " << "172.16.23.1 at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
-  if (server.listen_and_serve(ec, "172.16.23.1", port)) {
+  std::string ip = "192.168.128.1";
+  std::cout << "SHVC Server. Listening at the address: "<< ip << "at port "<< port << " with segment duration: " << segment_duration << "ms"<< std::endl;
+  if (server.listen_and_serve(ec, ip, port)) {
     std::cerr << "error: " << ec.message() << std::endl;
   }
 }
