@@ -1,4 +1,4 @@
-# nghttp2_ATHENA
+# H2BR - ATHENA
 This project is used in ATHENA lab
 
 
@@ -168,41 +168,8 @@ $ ipfw pipe 3 config bw 1000Kbit/s delay 50ms
 ```
 ==> ping to another connected PC ==> RTT = 10ms
 
-/********************************************************/
-HTTP Archive Viewer: an extension of Chrome to draw timelne of requests and responses.
-
-nghttp2_priority_spec_init
-Synopsis
-
-#include <nghttp2/nghttp2.h>
-
-void nghttp2_priority_spec_init(nghttp2_priority_spec *pri_spec, int32_t stream_id, int32_t weight, int exclusive)
-
-    Initializes pri_spec with the stream_id of the stream to depend on with weight and its exclusive flag. If exclusive is nonzero, exclusive flag is set.
-
-    The weight must be in [NGHTTP2_MIN_WEIGHT, NGHTTP2_MAX_WEIGHT], inclusive.
-
-/*********************** how to use priority *********************************/
-1. Viet thuat toan vao 1 ham e.g: Minh_restrans(HttpClient *client,int index) de chon bitrate
-2. Trong ham Minh_retrans(), sau khi chon bitrate xong thi goi ham Minh_req_vod_rate(client,rate1,rate2,index) de send request
-	if m_retrans == true ==> retransmit ONE segment
-
-	/*****************/
-	for (int i = 1; i <= 3; i++){
-		if(i!=3)	// NEU KHOng phai la region 3 ==> priority ti le
-		 	nghttp2_priority_spec_init(&dang_pri_spec, 11, (int)(stoi(rate_string)/num_of_tile), 0);
-		else 	// neu la region 3
-		 	nghttp2_priority_spec_init(&dang_pri_spec, 11,1, 0);
-
-		 /*****************/	// for each region, use a request
-	    if (client->add_request(dang_uri+"/region"+to_string(i)+"/bitrate="+rate_string+"/"+tile_str, 
-	                              dang_data_prd, dang_data_length, dang_pri_spec)) {
-	    	if(submit)
-	      	submit_request(client, dang_headers, client->reqvec.back().get()); 
-	    }
-	}
 ************************************************************************************************************************
-## H2BR journal paper
+## MTAP: Performance Analysis of H2BR: HTTP/2-based Segment Upgrading to Improve the QoE in HAS
 1. HEVC videos
 * Server
 	* Build:
@@ -247,3 +214,40 @@ void nghttp2_priority_spec_init(nghttp2_priority_spec *pri_spec, int32_t stream_
 	```
 	$ ./H2BR_journal_run_SHVC.sh
 	```
+
+*****************
+## Acknowledgement
+If you use this software, or derivates of it, in your research, you must:
+
+1. Include the link to this repository
+2. Cite the following publications:
+Nguyen, M., Timmerer, C. and Hellwagner, H., 2020, June. H2BR: An HTTP/2-based retransmission technique to improve the QoE of adaptive video streaming. In Proceedings of the 25th ACM Workshop on Packet Video (pp. 1-7).
+```
+@inproceedings{nguyen2020h2br,
+  title={H2BR: An HTTP/2-based retransmission technique to improve the QoE of adaptive video streaming},
+  author={Nguyen, Minh and Timmerer, Christian and Hellwagner, Hermann},
+  booktitle={Proceedings of the 25th ACM Workshop on Packet Video},
+  pages={1--7},
+  year={2020}
+}
+```
+Nguyen, M., Amirpour, H., Timmerer, C. and Hellwagner, H., 2020, August. Scalable high efficiency video coding based HTTP adaptive streaming over QUIC. In Proceedings of the Workshop on the Evolution, Performance, and Interoperability of QUIC (pp. 28-34).
+```
+@inproceedings{nguyen2020scalable,
+  title={Scalable high efficiency video coding based HTTP adaptive streaming over QUIC},
+  author={Nguyen, Minh and Amirpour, Hadi and Timmerer, Christian and Hellwagner, Hermann},
+  booktitle={Proceedings of the Workshop on the Evolution, Performance, and Interoperability of QUIC},
+  pages={28--34},
+  year={2020}
+}
+```
+Nguyen, M., Amirpour, H., Tashtarian, F., Timmerer, C. and Hellwagner, H., 2023. Performance Analysis of H2BR: HTTP/2-based Segment Upgrading to Improve the QoE in HAS. Multimedia Tools and Applications.
+```
+@article{nguyen2023performance,
+  title={Performance Analysis of H2BR: HTTP/2-based Segment Upgrading to Improve the QoE in HAS},
+  author={Nguyen, Minh and Tashtarian, Farzad and Amirpour, Hadi and Timmerer, Christian and Hellwagner, Hermann},
+  journal={Multimedia Tools and Applications},
+  year={2023},
+  publisher={Springer}
+}
+```
